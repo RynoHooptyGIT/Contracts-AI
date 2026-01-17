@@ -240,6 +240,21 @@ explore --mode=api "/api/chat"              # Explore endpoints
 
 See [guides/using-explore-agent.md](guides/using-explore-agent.md) for complete guide.
 
+### Plan Agent
+
+Create implementation plans, review code changes, and analyze architecture:
+
+```bash
+plan "add new feature"                     # Design implementation
+plan --mode=review "latest commit"         # Code review
+plan --mode=architecture "state mgmt"      # Architecture analysis
+plan --mode=simplicity "add database"      # Complexity check
+```
+
+All plans require user approval before implementation begins.
+
+See [guides/using-plan-agent.md](guides/using-plan-agent.md) for complete guide.
+
 ### Documentation Agent
 
 Runs automatically before every commit to ensure documentation completeness.
