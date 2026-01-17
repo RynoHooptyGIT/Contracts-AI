@@ -255,6 +255,22 @@ All plans require user approval before implementation begins.
 
 See [guides/using-plan-agent.md](guides/using-plan-agent.md) for complete guide.
 
+### Security Agent
+
+Perform security audits, vulnerability scans, and NIST compliance checks:
+
+```bash
+security audit                             # Full security audit
+security scan                              # Quick vulnerability scan
+security deps                              # Check dependency CVEs
+security secrets                           # Scan for exposed secrets
+security compliance                        # NIST compliance check
+```
+
+Based on OWASP Top 10, NIST CSF, and CWE Top 25 standards.
+
+See [guides/using-security-agent.md](guides/using-security-agent.md) for complete guide.
+
 ### Documentation Agent
 
 Runs automatically before every commit to ensure documentation completeness.

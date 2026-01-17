@@ -17,13 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code agent specification for implementation workflows
 - **Explore agent for codebase exploration, debugging, and semantic search**
 - **Plan agent for implementation planning, code review, and architecture analysis**
+- **Security agent for vulnerability detection, NIST compliance, and risk assessment**
 - Pre-commit hooks for documentation consistency
 - Documentation templates for features and API endpoints
 - Comprehensive README.md with installation and usage guides
 - Example exploration report demonstrating agent capabilities
 - Example implementation plan showing planning workflow
+- Example security audit report with OWASP/NIST compliance
 - Guide for using the explore agent with real-world examples
 - Guide for using the plan agent with approval workflows
+- Guide for using the security agent with compliance checks
 - GitHub repository initialization with proper .gitignore
 
 ### Changed
