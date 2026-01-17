@@ -1,4 +1,17 @@
-fastapi
-uvicorn
-httpx
-pydantic
+# Backend Dependencies for Contracts-AI
+
+# Core Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# HTTP Client
+httpx==0.28.1
+
+# Data Validation
+pydantic==2.10.5
+
+# Environment Variables
+python-dotenv==1.0.1
+
+# Rate Limiting
+slowapi==0.1.9

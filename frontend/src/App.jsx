@@ -5,10 +5,26 @@ function App() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const MAX_INPUT_LENGTH = 4000
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!input.trim()) return
+
+    // Clear any previous errors
+    setError('')
+
+    // Input validation
+    if (!input.trim()) {
+      setError('Please enter a message')
+      return
+    }
+
+    if (input.length > MAX_INPUT_LENGTH) {
+      setError(`Message too long (max ${MAX_INPUT_LENGTH} characters)`)
+      return
+    }
 
     const userMessage = { role: 'user', content: input }
     setMessages(prev => [...prev, userMessage])
@@ -28,7 +44,10 @@ function App() {
       })
 
       if (!response.ok) {
-        throw new Error('Network response was not ok')
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+        }
+        throw new Error(`Server error: ${response.status}`)
       }
 
       const data = await response.json()
@@ -37,7 +56,7 @@ function App() {
       setMessages(prev => [...prev, botMessage])
     } catch (error) {
       console.error('Error:', error)
-      setMessages(prev => [...prev, { role: 'system', content: 'Error connecting to backend.' }])
+      setError(error.message || 'Failed to send message. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -58,18 +77,32 @@ function App() {
             </div>
           </div>
         ))}
-        {loading && <div className="message assistant">Thinking...</div>}
+        {loading && (
+          <div className="message assistant loading-message">
+            <div className="message-content">
+              <strong>Mistral:</strong>
+              <p className="loading-dots">Thinking<span>.</span><span>.</span><span>.</span></p>
+            </div>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="input-area">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask something about contracts..."
-          disabled={loading}
-        />
-        <button type="submit" disabled={loading}>Send</button>
+        {error && <div className="error-message">{error}</div>}
+        <div className="input-group">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask something about contracts..."
+            disabled={loading}
+            maxLength={MAX_INPUT_LENGTH}
+          />
+          <span className="character-count">{input.length}/{MAX_INPUT_LENGTH}</span>
+        </div>
+        <button type="submit" disabled={loading || !input.trim()}>
+          {loading ? 'Sending...' : 'Send'}
+        </button>
       </form>
     </div>
   )
