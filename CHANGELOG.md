@@ -15,8 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLAUDE.md for AI agent guidance
 - Documentation agent for pre-commit documentation validation
 - Code agent specification for implementation workflows
+- **Explore agent for codebase exploration, debugging, and semantic search**
 - Pre-commit hooks for documentation consistency
 - Documentation templates for features and API endpoints
+- Comprehensive README.md with installation and usage guides
+- Example exploration report demonstrating agent capabilities
+- Guide for using the explore agent with real-world examples
+- GitHub repository initialization with proper .gitignore
 
 ### Changed
 

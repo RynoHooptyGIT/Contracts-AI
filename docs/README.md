@@ -16,8 +16,10 @@ docs/
 │   └── [endpoint-name].md
 ├── architecture/          # Architecture decisions and patterns
 │   └── [decision-name].md
-└── guides/                # User and developer guides
-    └── [guide-name].md
+├── guides/                # User and developer guides
+│   └── [guide-name].md
+└── examples/              # Example documentation and exploration reports
+    └── [example-name].md
 ```
 
 ## Documentation Types
@@ -75,6 +77,18 @@ Step-by-step guides for common tasks.
 - Explaining setup procedures
 
 **Example**: `guides/getting-started.md`
+
+### 5. Examples (`examples/`)
+
+Example documentation and exploration reports demonstrating best practices.
+
+**Purpose**:
+- Show real exploration outputs
+- Demonstrate documentation quality
+- Provide templates by example
+- Help new developers understand codebase
+
+**Example**: `examples/exploration-chat-interface.md`
 
 ## Using Templates
 
@@ -210,12 +224,41 @@ For **architectural changes**:
 - [ ] Rationale explained
 - [ ] Trade-offs discussed
 
+## Claude Code Agents
+
+### Explore Agent
+
+Use the explore agent to understand the codebase, debug issues, and search for code:
+
+```bash
+explore "chat interface"                    # Understand how it works
+explore --mode=debug "messages not sending" # Debug an issue
+explore --mode=search "error handling"      # Find specific code
+explore --mode=flow "message submission"    # Trace data flow
+explore --mode=api "/api/chat"              # Explore endpoints
+```
+
+See [guides/using-explore-agent.md](guides/using-explore-agent.md) for complete guide.
+
+### Documentation Agent
+
+Runs automatically before every commit to ensure documentation completeness.
+
+See [.claude/agents/documentation.md](../.claude/agents/documentation.md) for details.
+
+### Code Agent
+
+Implementation agent for executing approved plans with project-specific workflows.
+
+See [.claude/agents/code.md](../.claude/agents/code.md) for details.
+
 ## Need Help?
 
 - Check templates in `docs/templates/`
 - Review existing documentation for examples
+- Review example explorations in `docs/examples/`
 - See [CLAUDE.md](../CLAUDE.md) for project context
-- Run the documentation agent: `doc validate`
+- Use explore agent: `explore "your question"`
 
 ---
 
