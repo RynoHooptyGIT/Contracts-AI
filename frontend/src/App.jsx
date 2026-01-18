@@ -1,13 +1,23 @@
 import { useState } from 'react'
 import './App.css'
+import DocumentUpload from './components/DocumentUpload'
+import DocumentList from './components/DocumentList'
 
 function App() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [useRAG, setUseRAG] = useState(true)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [showDocuments, setShowDocuments] = useState(false)
 
   const MAX_INPUT_LENGTH = 4000
+
+  const handleUploadComplete = () => {
+    // Trigger document list refresh
+    setRefreshTrigger(prev => prev + 1)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -32,7 +42,11 @@ function App() {
     setLoading(true)
 
     try {
-      const response = await fetch('http://localhost:8001/api/chat', {
+      const url = new URL('http://localhost:8001/api/chat')
+      url.searchParams.append('use_rag', useRAG)
+      url.searchParams.append('top_k', '3')
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,7 +80,30 @@ function App() {
     <div className="app-container">
       <header>
         <h1>Contracts AI - Mistral Chat</h1>
+        <div className="header-controls">
+          <button
+            className="toggle-documents-button"
+            onClick={() => setShowDocuments(!showDocuments)}
+          >
+            {showDocuments ? '📖 Hide Documents' : '📁 Manage Documents'}
+          </button>
+          <label className="rag-toggle">
+            <input
+              type="checkbox"
+              checked={useRAG}
+              onChange={(e) => setUseRAG(e.target.checked)}
+            />
+            <span className="toggle-label">Use Document Context (RAG)</span>
+          </label>
+        </div>
       </header>
+
+      {showDocuments && (
+        <div className="documents-section">
+          <DocumentUpload onUploadComplete={handleUploadComplete} />
+          <DocumentList refreshTrigger={refreshTrigger} />
+        </div>
+      )}
 
       <div className="chat-container">
         {messages.map((msg, idx) => (

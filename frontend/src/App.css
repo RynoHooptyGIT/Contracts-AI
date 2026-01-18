@@ -32,7 +32,56 @@ body {
 
 header {
   margin-bottom: 2rem;
+}
+
+header h1 {
+  margin: 0 0 1rem 0;
   text-align: center;
+}
+
+.header-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.toggle-documents-button {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  background-color: #333;
+  border: 1px solid #555;
+}
+
+.toggle-documents-button:hover {
+  background-color: #3a3a3a;
+  border-color: #666;
+}
+
+.rag-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rag-toggle input[type="checkbox"] {
+  width: auto;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+.toggle-label {
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.documents-section {
+  margin-bottom: 1.5rem;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .chat-container {

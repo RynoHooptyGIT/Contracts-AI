@@ -1,0 +1,160 @@
+.document-list {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.document-list h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #888;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #888;
+}
+
+.empty-state p {
+  margin: 0.5rem 0;
+}
+
+.empty-hint {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.documents-grid {
+  display: grid;
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+/* Custom scrollbar */
+.documents-grid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.documents-grid::-webkit-scrollbar-track {
+  background: #222;
+  border-radius: 4px;
+}
+
+.documents-grid::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+.documents-grid::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.document-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #222;
+  border: 1px solid #333;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.document-card:hover {
+  background-color: #282828;
+  border-color: #444;
+}
+
+.document-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.document-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.document-name {
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.document-meta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.file-size,
+.file-type {
+  color: #999;
+}
+
+.status {
+  padding: 0.125rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-indexed {
+  background-color: #1a4d1a;
+  color: #4ade80;
+}
+
+.status-processing {
+  background-color: #4d4d1a;
+  color: #fbbf24;
+}
+
+.status-error {
+  background-color: #4d1a1a;
+  color: #f87171;
+}
+
+.document-date {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.delete-button {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+}
+
+.delete-button:hover:not(:disabled) {
+  opacity: 1;
+  background-color: rgba(255, 68, 68, 0.1);
+}
+
+.delete-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+}

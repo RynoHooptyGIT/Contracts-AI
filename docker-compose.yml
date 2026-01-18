@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: contracts-ai-backend
+    ports:
+      - "8001:8001"
+    environment:
+      - ALLOWED_ORIGINS=http://localhost:5173
+      - OLLAMA_URL=http://ollama:11434/api/chat
+      - DATABASE_PATH=/app/data/documents.db
+      - FAISS_INDEX_PATH=/app/data/faiss_index
+      - UPLOAD_DIR=/app/data/documents
+    volumes:
+      - backend_data:/app/data
+    networks:
+      - contracts-ai-network
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: contracts-ai-frontend
+    ports:
+      - "5173:80"
+    environment:
+      - VITE_API_URL=http://localhost:8001
+    networks:
+      - contracts-ai-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: contracts-ai-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      - contracts-ai-network
+    restart: unless-stopped
+    # Optional: GPU support (uncomment if you have NVIDIA GPU)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+networks:
+  contracts-ai-network:
+    driver: bridge
+
+volumes:
+  backend_data:
+  ollama_models:
