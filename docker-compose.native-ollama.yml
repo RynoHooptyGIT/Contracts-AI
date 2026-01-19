@@ -1,0 +1,53 @@
+# docker-compose.native-ollama.yml
+# Optimized for Apple Silicon (M1/M2/M3/M4) with native Ollama using Metal GPU acceleration
+#
+# SETUP:
+# 1. Install Ollama natively: brew install ollama
+# 2. Start Ollama: ollama serve (runs in background)
+# 3. Pull model: ollama pull mistral
+# 4. Start containers: docker-compose -f docker-compose.native-ollama.yml up -d
+#
+# PERFORMANCE: Native Ollama with Metal GPU is 10-50x faster than Docker CPU-only
+
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: contracts-ai-backend
+    ports:
+      - "8001:8001"
+    environment:
+      # Point to native Ollama on host machine (not containerized)
+      - ALLOWED_ORIGINS=http://localhost:3000
+      - OLLAMA_URL=http://host.docker.internal:11434/api/chat  # Host Ollama
+      - DATABASE_PATH=/app/data/documents.db
+      - FAISS_INDEX_PATH=/app/data/faiss_index
+      - UPLOAD_DIR=/app/data/documents
+    volumes:
+      - backend_data:/app/data
+    # Allow container to access host network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: contracts-ai-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=http://localhost:8001
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # NOTE: Ollama runs NATIVELY on macOS (outside Docker) for Metal GPU acceleration
+  # No ollama service in this docker-compose file
+
+volumes:
+  backend_data:

@@ -6,10 +6,33 @@
   border: 1px solid #333;
 }
 
+.document-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
 .document-list h3 {
-  margin: 0 0 1rem 0;
+  margin: 0;
   font-size: 1.2rem;
   color: #fff;
+}
+
+.template-manager-toggle {
+  padding: 0.5rem 1rem;
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.template-manager-toggle:hover {
+  background-color: #444;
+  border-color: #555;
 }
 
 .loading {
@@ -76,9 +99,28 @@
   border-color: #444;
 }
 
+.document-card.is-template {
+  border: 2px solid #fbbf24;
+  background-color: #2a2410;
+}
+
+.document-card.is-template:hover {
+  background-color: #332a15;
+  border-color: #fbbf24;
+}
+
 .document-icon {
   font-size: 2rem;
   flex-shrink: 0;
+  position: relative;
+}
+
+.template-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 1.2rem;
+  filter: drop-shadow(0 0 3px rgba(251, 191, 36, 0.8));
 }
 
 .document-info {
@@ -102,6 +144,13 @@
   gap: 0.75rem;
   font-size: 0.85rem;
   color: #888;
+  flex-wrap: wrap;
+}
+
+.template-status {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
 }
 
 .file-size,
@@ -137,6 +186,13 @@
   color: #666;
 }
 
+.document-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.mark-template-button,
 .delete-button {
   flex-shrink: 0;
   background: none;
@@ -149,6 +205,12 @@
   border-radius: 4px;
 }
 
+.mark-template-button:hover {
+  opacity: 1;
+  background-color: rgba(251, 191, 36, 0.1);
+  filter: drop-shadow(0 0 3px rgba(251, 191, 36, 0.5));
+}
+
 .delete-button:hover:not(:disabled) {
   opacity: 1;
   background-color: rgba(255, 68, 68, 0.1);
@@ -157,4 +219,147 @@
 .delete-button:disabled {
   cursor: not-allowed;
   opacity: 0.3;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  background-color: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-content h3 {
+  margin: 0 0 0.5rem 0;
+  color: #fff;
+  font-size: 1.3rem;
+}
+
+.modal-subtitle {
+  color: #888;
+  font-size: 0.9rem;
+  margin: 0 0 1.5rem 0;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #222;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #fbbf24;
+}
+
+.form-group select:disabled,
+.form-group textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.cancel-button,
+.submit-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-button {
+  background-color: #333;
+  color: #fff;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background-color: #444;
+}
+
+.submit-button {
+  background-color: #fbbf24;
+  color: #000;
+}
+
+.submit-button:hover:not(:disabled) {
+  background-color: #f59e0b;
+}
+
+.cancel-button:disabled,
+.submit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

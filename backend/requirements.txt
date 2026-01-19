@@ -17,8 +17,17 @@ python-dotenv==1.0.1
 slowapi==0.1.9
 
 # RAG (Retrieval Augmented Generation)
+numpy==1.24.3                 # Pin numpy for FAISS compatibility
 sentence-transformers==2.3.1  # Embedding generation
 faiss-cpu==1.7.4              # Vector similarity search
 PyPDF2==3.0.1                 # PDF parsing
 python-docx==1.1.0            # DOCX parsing
 python-multipart==0.0.6       # File upload support
+
+# Document Processing & Redlining
+mammoth==1.6.0                # DOCX to HTML conversion
+beautifulsoup4==4.12.3        # HTML parsing and manipulation
+lxml==5.1.0                   # XML/HTML processing (required by beautifulsoup4)
+
+# PDF/DOCX Handling
+pdfplumber==0.11.0            # PDF text extraction and analysis

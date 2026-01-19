@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import DocumentUpload from './components/DocumentUpload'
 import DocumentList from './components/DocumentList'
+import DocumentInsightsPanel from './components/DocumentInsightsPanel'
+import MetricsPanel from './components/MetricsPanel'
 
 function App() {
   const [messages, setMessages] = useState([])
@@ -11,8 +13,26 @@ function App() {
   const [useRAG, setUseRAG] = useState(true)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [showDocuments, setShowDocuments] = useState(false)
+  const [documentCount, setDocumentCount] = useState(0)
 
   const MAX_INPUT_LENGTH = 4000
+
+  // Fetch document count on mount and when refreshTrigger changes
+  useEffect(() => {
+    const fetchDocumentCount = async () => {
+      try {
+        const response = await fetch('http://localhost:8001/api/documents')
+        if (response.ok) {
+          const data = await response.json()
+          setDocumentCount(data.count || 0)
+        }
+      } catch (error) {
+        console.error('Failed to fetch document count:', error)
+      }
+    }
+
+    fetchDocumentCount()
+  }, [refreshTrigger])
 
   const handleUploadComplete = () => {
     // Trigger document list refresh
@@ -77,70 +97,92 @@ function App() {
   }
 
   return (
-    <div className="app-container">
-      <header>
-        <h1>Contracts AI - Mistral Chat</h1>
-        <div className="header-controls">
-          <button
-            className="toggle-documents-button"
-            onClick={() => setShowDocuments(!showDocuments)}
-          >
-            {showDocuments ? '📖 Hide Documents' : '📁 Manage Documents'}
-          </button>
-          <label className="rag-toggle">
-            <input
-              type="checkbox"
-              checked={useRAG}
-              onChange={(e) => setUseRAG(e.target.checked)}
-            />
-            <span className="toggle-label">Use Document Context (RAG)</span>
-          </label>
-        </div>
-      </header>
-
-      {showDocuments && (
-        <div className="documents-section">
-          <DocumentUpload onUploadComplete={handleUploadComplete} />
-          <DocumentList refreshTrigger={refreshTrigger} />
-        </div>
-      )}
-
-      <div className="chat-container">
-        {messages.map((msg, idx) => (
-          <div key={idx} className={`message ${msg.role}`}>
-            <div className="message-content">
-              <strong>{msg.role === 'user' ? 'You' : 'Mistral'}:</strong>
-              <p>{msg.content}</p>
+    <div className="app-layout">
+      <div className="main-content">
+        <div className="app-container">
+          <header>
+            <h1>Contracts AI - Mistral Chat</h1>
+            <div className="header-controls">
+              <button
+                className="toggle-documents-button"
+                onClick={() => setShowDocuments(!showDocuments)}
+              >
+                {showDocuments ? '📖 Hide Documents' : '📁 Manage Documents'}
+              </button>
+              <div className="document-count-badge">
+                <span className="badge-icon">📄</span>
+                <span className="badge-count">{documentCount}</span>
+                <span className="badge-label">Document{documentCount !== 1 ? 's' : ''} Indexed</span>
+              </div>
+              <label className="rag-toggle">
+                <input
+                  type="checkbox"
+                  checked={useRAG}
+                  onChange={(e) => setUseRAG(e.target.checked)}
+                />
+                <span className="toggle-label">Use Document Context (RAG)</span>
+              </label>
             </div>
-          </div>
-        ))}
-        {loading && (
-          <div className="message assistant loading-message">
-            <div className="message-content">
-              <strong>Mistral:</strong>
-              <p className="loading-dots">Thinking<span>.</span><span>.</span><span>.</span></p>
+          </header>
+
+          {showDocuments && (
+            <div className="documents-section">
+              <MetricsPanel refreshTrigger={refreshTrigger} />
+              <DocumentUpload onUploadComplete={handleUploadComplete} />
+              <DocumentList refreshTrigger={refreshTrigger} />
             </div>
+          )}
+
+          <div className="chat-container">
+            {messages.map((msg, idx) => (
+              <div key={idx} className={`message ${msg.role}`}>
+                <div className="message-content">
+                  <strong>{msg.role === 'user' ? 'You' : 'Mistral'}:</strong>
+                  <p>{msg.content}</p>
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div className="message assistant loading-message">
+                <div className="message-content">
+                  <strong>Mistral:</strong>
+                  <p className="loading-dots">Thinking<span>.</span><span>.</span><span>.</span></p>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+
+          <form onSubmit={handleSubmit} className="input-area">
+            {error && <div className="error-message">{error}</div>}
+            <div className="input-group">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask something about contracts..."
+                disabled={loading}
+                maxLength={MAX_INPUT_LENGTH}
+              />
+              <span className="character-count">{input.length}/{MAX_INPUT_LENGTH}</span>
+            </div>
+            <button type="submit" disabled={loading || !input.trim()}>
+              {loading ? 'Sending...' : 'Send'}
+            </button>
+          </form>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="input-area">
-        {error && <div className="error-message">{error}</div>}
-        <div className="input-group">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask something about contracts..."
-            disabled={loading}
-            maxLength={MAX_INPUT_LENGTH}
-          />
-          <span className="character-count">{input.length}/{MAX_INPUT_LENGTH}</span>
-        </div>
-        <button type="submit" disabled={loading || !input.trim()}>
-          {loading ? 'Sending...' : 'Send'}
-        </button>
-      </form>
+      <div className="log-panel-container">
+        <DocumentInsightsPanel
+          refreshTrigger={refreshTrigger}
+          onQuestionClick={(question) => setInput(question)}
+          onCategoryClick={(category) => {
+            // Filter DocumentList by category
+            console.log('Filter by category:', category)
+            setShowDocuments(true)
+          }}
+        />
+      </div>
     </div>
   )
 }

@@ -9,7 +9,7 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - ALLOWED_ORIGINS=http://localhost:5173
+      - ALLOWED_ORIGINS=http://localhost:3000
       - OLLAMA_URL=http://ollama:11434/api/chat
       - DATABASE_PATH=/app/data/documents.db
       - FAISS_INDEX_PATH=/app/data/faiss_index
@@ -28,7 +28,7 @@ services:
       dockerfile: Dockerfile
     container_name: contracts-ai-frontend
     ports:
-      - "5173:80"
+      - "3000:80"
     environment:
       - VITE_API_URL=http://localhost:8001
     networks:
@@ -47,7 +47,10 @@ services:
     networks:
       - contracts-ai-network
     restart: unless-stopped
-    # Optional: GPU support (uncomment if you have NVIDIA GPU)
+    # NOTE: For Apple Silicon (M1/M2/M3/M4), run Ollama NATIVELY on macOS for Metal GPU acceleration
+    # Docker on macOS has limited Metal passthrough. See docker-compose.native-ollama.yml
+    #
+    # For NVIDIA GPU (Linux), uncomment below:
     # deploy:
     #   resources:
     #     reservations:
