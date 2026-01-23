@@ -133,7 +133,7 @@ class ClauseExtractor:
                     response = client.post(
                         self.ollama_url,
                         json=payload,
-                        timeout=60.0
+                        timeout=180.0  # Increased to 3 minutes for clause extraction
                     )
 
                     if response.status_code != 200:

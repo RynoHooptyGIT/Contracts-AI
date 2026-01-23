@@ -1,0 +1,83 @@
+MODIFIED NON-DISCLOSURE AGREEMENT
+
+This Non-Disclosure Agreement (the "Agreement") is made effective January 22, 2026, by and between:
+
+TechStart Inc., a California corporation ("Company"), and
+John Smith ("Recipient").
+
+BACKGROUND
+The Parties wish to explore a business opportunity, and Company may disclose confidential information to Recipient.
+
+AGREEMENT
+
+1. CONFIDENTIAL INFORMATION
+
+1.1 Definition. "Confidential Information" means all information disclosed by Company to Recipient that is marked "Confidential" or should reasonably be considered confidential. This includes: technical data, trade secrets, research, products, customers, software, and business information.
+
+1.2 Marking. Confidential Information disclosed orally must be confirmed in writing within forty-five (45) days.
+
+2. EXCLUSIONS
+
+Information is not confidential if it:
+(a) was already known to Recipient;
+(b) becomes publicly known through no wrongful act;
+(c) is received from a third party without breach;
+(d) is independently developed by Recipient; or
+(e) must be disclosed by law with prompt notice to Company.
+
+3. RECIPIENT OBLIGATIONS
+
+3.1 Non-Use and Non-Disclosure. Recipient will not use Confidential Information except to evaluate a business relationship. Recipient will not disclose it to third parties.
+
+3.2 Standard of Care. Recipient shall protect Confidential Information with reasonable care, at minimum the same care used for its own confidential information.
+
+3.3 Limited Disclosure. Recipient may share Confidential Information only with employees and contractors who need to know and are bound by similar confidentiality obligations.
+
+4. TERM
+
+4.1 Duration. This Agreement remains in effect for four (4) years from the Effective Date, unless terminated with forty-five (45) days written notice.
+
+4.2 Continuing Obligations. Obligations survive termination for four (4) years.
+
+4.3 Return of Materials. Upon termination, Recipient shall return or destroy all Confidential Information within fifteen (15) days.
+
+5. NO RIGHTS GRANTED
+
+All Confidential Information remains Company property. No license is granted. Company retains all intellectual property rights.
+
+6. NO WARRANTY
+
+CONFIDENTIAL INFORMATION IS PROVIDED "AS IS" WITHOUT ANY WARRANTIES.
+
+7. REMEDIES
+
+7.1 Equitable Relief. Company may seek injunctive relief for breaches.
+
+7.2 Attorneys' Fees. Prevailing party recovers reasonable attorneys' fees and costs.
+
+8. MISCELLANEOUS
+
+8.1 Governing Law. This Agreement is governed by California law.
+
+8.2 Dispute Resolution. Disputes resolved through arbitration in Los Angeles, California.
+
+8.3 Entire Agreement. This is the complete agreement between the Parties.
+
+8.4 Amendments. Amendments must be in writing and signed by both Parties.
+
+8.5 Severability. Invalid provisions will be reformed to be enforceable.
+
+8.6 No Assignment. Recipient may not assign without consent. Company may assign to successors.
+
+8.7 Waiver. Waivers must be in writing.
+
+8.8 Counterparts. May be executed in counterparts.
+
+SIGNATURES:
+
+COMPANY:                              RECIPIENT:
+
+_______________________              _______________________
+TechStart Inc.                       John Smith
+By: Jane Doe, CEO
+Date: January 22, 2026               Date: January 22, 2026

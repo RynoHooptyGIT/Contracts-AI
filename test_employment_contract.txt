@@ -1,0 +1,39 @@
+EMPLOYMENT AGREEMENT
+
+This Employment Agreement ("Agreement") is entered into as of January 20, 2026, between TechCorp Inc. ("Employer") and John Smith ("Employee").
+
+1. POSITION AND DUTIES
+Employee shall serve as Senior Software Engineer and shall perform all duties customarily associated with such position. Employee agrees to devote their full business time and attention to the performance of duties under this Agreement.
+
+2. COMPENSATION
+Employer shall pay Employee a base salary of $120,000 per year, payable in accordance with Employer's standard payroll practices. Payment shall be made within forty-five (45) days of invoice receipt.
+
+3. BENEFITS
+Employee shall be entitled to participate in all employee benefit plans maintained by Employer, including health insurance, 401(k), and paid time off in accordance with company policies.
+
+4. TERMINATION
+Either party may terminate this Agreement with thirty (30) days written notice. Upon termination, Employee shall return all company property and Employer shall pay all compensation owed through the termination date.
+
+5. CONFIDENTIALITY
+Employee agrees to maintain the confidentiality of all proprietary information learned during employment and shall not disclose such information to any third party without prior written consent from Employer.
+
+6. INTELLECTUAL PROPERTY
+All inventions, discoveries, and works created by Employee during the term of employment shall be the sole property of Employer. Employee hereby assigns all rights, title, and interest in such work to Employer.
+
+7. NON-COMPETE
+Employee agrees not to engage in any business that directly competes with Employer's business for a period of twelve (12) months following termination of employment within a 50-mile radius of Employer's principal place of business.
+
+8. DISPUTE RESOLUTION
+Any disputes arising under this Agreement shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association. The arbitration shall take place in Jacksonville, Florida.
+
+9. INDEMNIFICATION
+Employer agrees to indemnify and hold harmless Employee from any claims arising from Employee's performance of duties under this Agreement, provided such performance was within the scope of employment and not the result of gross negligence or willful misconduct.
+
+10. GOVERNING LAW
+This Agreement shall be governed by and construed in accordance with the laws of the State of Florida, without regard to conflicts of law principles.
+
+IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.
+
+____________________          ____________________
+TechCorp Inc.                 John Smith
+Employer                      Employee

@@ -1,0 +1,24 @@
+You are a legal contract analyzer. Extract all distinct clauses from this contract.
+
+For each clause provide:
+1. Title (e.g., "Payment Terms")
+2. Type: must be one of: Payment, Liability, Termination, Confidentiality, IP, Dispute, Warranty, Indemnification, Other
+3. Full clause text
+4. Key terms (amounts, dates, durations, parties) as a dict
+5. Position index (1, 2, 3...)
+
+Contract Text:
+{contract_text}
+
+Respond ONLY in valid JSON format with no additional text:
+{{
+  "clauses": [
+    {{
+      "title": "Payment Terms",
+      "type": "Payment",
+      "text": "Payment shall be made within thirty (30) days...",
+      "terms": {{"period": "30 days", "amount": "$50,000"}},
+      "index": 1
+    }}
+  ]
+}}

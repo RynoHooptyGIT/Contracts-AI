@@ -1,0 +1,101 @@
+STANDARD NON-DISCLOSURE AGREEMENT
+(Company Golden Template - Version 2.1)
+
+This Non-Disclosure Agreement (the "Agreement") is made effective as of the date of last signature below (the "Effective Date"), by and between:
+
+[Company Name], a [State] corporation ("Company"), and
+[Recipient Name] ("Recipient").
+
+Company and Recipient are collectively referred to as the "Parties."
+
+BACKGROUND
+
+The Parties wish to explore a business opportunity of mutual interest, and in connection with this opportunity, Company may disclose to Recipient certain confidential technical and business information which Company desires Recipient to treat as confidential.
+
+AGREEMENT
+
+In consideration of the mutual promises and covenants contained in this Agreement, the Parties agree as follows:
+
+1. CONFIDENTIAL INFORMATION
+
+1.1 Definition. "Confidential Information" means all information disclosed by Company to Recipient, whether orally, in writing, or by any other means, that is designated as confidential or that reasonably should be understood to be confidential given the nature of the information and the circumstances of disclosure. Confidential Information includes, without limitation: technical data, trade secrets, know-how, research, product plans, products, services, customers, customer lists, markets, software, developments, inventions, processes, formulas, technology, designs, drawings, engineering, hardware configuration information, marketing, finances, or other business information.
+
+1.2 Marking. Written Confidential Information shall be marked "Confidential," "Proprietary," or with a similar designation. Confidential Information disclosed orally shall be identified as confidential at the time of disclosure and confirmed in writing within thirty (30) days.
+
+2. EXCLUSIONS
+
+Confidential Information does not include information that:
+
+(a) was already known to Recipient at the time of disclosure without obligation of confidentiality;
+
+(b) is or becomes publicly known through no wrongful act of Recipient;
+
+(c) is received by Recipient from a third party without breach of any confidentiality obligation;
+
+(d) is independently developed by Recipient without use of or reference to Company's Confidential Information; or
+
+(e) is required to be disclosed by law or court order, provided Recipient gives Company prompt written notice and reasonable assistance in seeking a protective order.
+
+3. RECIPIENT OBLIGATIONS
+
+3.1 Non-Use and Non-Disclosure. Recipient agrees not to use any Confidential Information for any purpose except to evaluate and engage in discussions concerning a potential business relationship with Company. Recipient agrees not to disclose any Confidential Information to third parties.
+
+3.2 Standard of Care. Recipient shall protect the confidentiality of the Confidential Information in the same manner that it protects its own confidential information of a similar nature, and in any event with no less than a reasonable degree of care.
+
+3.3 Limited Disclosure. Recipient may disclose Confidential Information only to its employees, contractors, and advisors who need to know such information and who have signed confidentiality agreements or are otherwise bound by confidentiality obligations at least as restrictive as those contained herein. Recipient shall be liable for breaches by such persons.
+
+4. TERM
+
+4.1 Duration. This Agreement shall remain in effect for two (2) years from the Effective Date, unless terminated earlier by either Party upon thirty (30) days written notice.
+
+4.2 Continuing Obligations. Recipient's obligations under Section 3 shall survive termination and continue for three (3) years from the date of termination.
+
+4.3 Return of Materials. Upon Company's request or upon termination, Recipient shall promptly return or destroy all Confidential Information and all copies thereof, and certify such destruction in writing.
+
+5. NO RIGHTS GRANTED
+
+All Confidential Information remains the property of Company. This Agreement does not grant Recipient any license or right to Company's Confidential Information except as expressly stated herein. Company retains all patent, copyright, trade secret, and other proprietary rights in the Confidential Information.
+
+6. NO WARRANTY
+
+ALL CONFIDENTIAL INFORMATION IS PROVIDED "AS IS." COMPANY MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, WITH RESPECT TO THE CONFIDENTIAL INFORMATION.
+
+7. REMEDIES
+
+7.1 Equitable Relief. Recipient acknowledges that disclosure of Confidential Information would cause irreparable harm and significant injury to Company that may be difficult to ascertain. Accordingly, Company shall have the right to seek immediate injunctive relief to enforce this Agreement, in addition to any other rights and remedies it may have.
+
+7.2 Costs and Attorneys' Fees. In any action to enforce this Agreement, the prevailing Party shall be entitled to recover its costs and reasonable attorneys' fees.
+
+8. MISCELLANEOUS
+
+8.1 Governing Law. This Agreement shall be governed by the laws of the State of Delaware, excluding its conflicts of law rules.
+
+8.2 Dispute Resolution. Any disputes under this Agreement shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association, conducted in Wilmington, Delaware.
+
+8.3 Entire Agreement. This Agreement constitutes the complete and exclusive agreement between the Parties and supersedes all prior agreements and understandings relating to its subject matter.
+
+8.4 Amendments. This Agreement may be amended only by a written document signed by both Parties.
+
+8.5 Severability. If any provision is held invalid or unenforceable, it shall be reformed to the minimum extent necessary to make it enforceable, and the remaining provisions shall remain in full force.
+
+8.6 No Assignment. Recipient may not assign this Agreement without Company's prior written consent. Company may assign this Agreement to any successor to its business.
+
+8.7 Waiver. Any waiver must be in writing and signed by the waiving Party. Waiver of one breach does not waive any other breach.
+
+8.8 Counterparts. This Agreement may be executed in counterparts, each of which is deemed an original.
+
+IN WITNESS WHEREOF, the Parties have executed this Agreement.
+
+COMPANY:                              RECIPIENT:
+
+_______________________              _______________________
+Signature                            Signature
+
+_______________________              _______________________
+Name (Print)                         Name (Print)
+
+_______________________              _______________________
+Title                                Title
+
+_______________________              _______________________
+Date                                 Date

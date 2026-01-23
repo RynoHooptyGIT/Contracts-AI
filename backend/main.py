@@ -31,6 +31,13 @@ except ImportError:
     CLAUSE_EXTRACTOR_AVAILABLE = False
     log_warning("ClauseExtractor not available - clause extraction endpoints will return 501", "STARTUP")
 
+try:
+    from services.redlining_service import RedliningService
+    REDLINING_SERVICE_AVAILABLE = True
+except ImportError:
+    REDLINING_SERVICE_AVAILABLE = False
+    log_warning("RedliningService not available - redlining endpoints will return 501", "STARTUP")
+
 # Load environment variables
 load_dotenv()
 
@@ -108,6 +115,16 @@ class ApproveTemplateRequest(BaseModel):
             raise ValueError("approved_by cannot be empty")
         return v.strip()
 
+class StartRedliningRequest(BaseModel):
+    document_id: str
+    category: Optional[str] = None
+
+    @validator('document_id')
+    def validate_document_id(cls, v):
+        if not v or not v.strip():
+            raise ValueError("document_id cannot be empty")
+        return v.strip()
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize database and document manager on startup"""
@@ -135,6 +152,12 @@ async def startup_event():
         log_info("Initializing clause extractor...", "STARTUP")
         app.state.clause_extractor = ClauseExtractor()
         log_success("Clause extractor ready", "STARTUP")
+
+    # Initialize redlining service if available
+    if REDLINING_SERVICE_AVAILABLE:
+        log_info("Initializing redlining service...", "STARTUP")
+        app.state.redlining_service = RedliningService()
+        log_success("Redlining service ready", "STARTUP")
 
 @app.get("/")
 async def root():
@@ -196,38 +219,73 @@ async def stream_logs(request: Request):
 @app.post("/api/documents/upload")
 @limiter.limit("5/minute")
 async def upload_documents(request: Request, file: UploadFile = File(...)):
-    """Upload ZIP file containing documents for RAG ingestion"""
+    """Upload ZIP file (batch) or individual document (PDF/DOCX/TXT) for RAG ingestion"""
     log_info(f"Received upload request: {file.filename}", "UPLOAD")
 
-    # Validate file type
-    if not file.filename.endswith('.zip'):
-        log_warning(f"Rejected non-ZIP file: {file.filename}", "UPLOAD")
-        raise HTTPException(status_code=400, detail="Only ZIP files are supported")
+    # Determine file type
+    filename_lower = file.filename.lower()
+    is_zip = filename_lower.endswith('.zip')
+    is_single_doc = filename_lower.endswith(('.pdf', '.docx', '.txt'))
 
-    log_info(f"Saving uploaded file: {file.filename}", "UPLOAD")
-    # Save uploaded file temporarily
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp:
-        content = await file.read()
-        tmp.write(content)
-        tmp_path = tmp.name
+    if not (is_zip or is_single_doc):
+        log_warning(f"Rejected unsupported file type: {file.filename}", "UPLOAD")
+        raise HTTPException(status_code=400, detail="Only ZIP, PDF, DOCX, and TXT files are supported")
 
-    # Process ZIP file
-    try:
+    # Read file content
+    content = await file.read()
+
+    # Handle ZIP file (batch upload)
+    if is_zip:
         log_info(f"Processing ZIP file: {file.filename}", "UPLOAD")
-        results = app.state.doc_manager.ingest_zip(tmp_path)
-        log_success(f"Processed {results['processed']} files, {results['failed']} failed", "UPLOAD")
-        return {
-            "success": True,
-            "message": f"Processed {results['processed']} files successfully, {results['failed']} failed",
-            "details": results
-        }
-    except Exception as e:
-        log_error(f"Upload processing failed: {str(e)}", "UPLOAD")
-        raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
-    finally:
-        # Clean up temporary file
-        Path(tmp_path).unlink(missing_ok=True)
-        log_info("Cleaned up temporary file", "UPLOAD")
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+
+        try:
+            results = app.state.doc_manager.ingest_zip(tmp_path)
+            log_success(f"Processed {results['processed']} files, {results['failed']} failed", "UPLOAD")
+            return {
+                "success": True,
+                "message": f"Processed {results['processed']} files successfully, {results['failed']} failed",
+                "details": results
+            }
+        except Exception as e:
+            log_error(f"ZIP processing failed: {str(e)}", "UPLOAD")
+            raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+            log_info("Cleaned up temporary ZIP file", "UPLOAD")
+
+    # Handle single document file
+    else:
+        log_info(f"Processing single document: {file.filename}", "UPLOAD")
+        suffix = Path(file.filename).suffix
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+
+        try:
+            doc_id = app.state.doc_manager.process_file(tmp_path)
+            log_success(f"Processed document: {file.filename}", "UPLOAD")
+            return {
+                "success": True,
+                "message": f"Document uploaded successfully",
+                "details": {
+                    "processed": 1,
+                    "failed": 0,
+                    "documents": [{
+                        "id": doc_id,
+                        "filename": file.filename,
+                        "file_type": suffix
+                    }]
+                }
+            }
+        except Exception as e:
+            log_error(f"Document processing failed: {str(e)}", "UPLOAD")
+            raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+            log_info("Cleaned up temporary file", "UPLOAD")
 
 @app.get("/api/documents")
 async def list_documents():
@@ -552,6 +610,115 @@ async def extract_clauses(request: Request, document_id: str):
     except Exception as e:
         log_error(f"Failed to extract clauses from document {document_id}: {str(e)}", "CLAUSES")
         raise HTTPException(status_code=500, detail=f"Failed to extract clauses: {str(e)}")
+
+# ==================== Redlining Session Endpoints ====================
+
+@app.post("/api/redlining/start")
+@limiter.limit("10/minute")
+async def start_redlining_session(request: Request, redlining_request: StartRedliningRequest):
+    """Start a new redlining session for an uploaded contract"""
+    if not REDLINING_SERVICE_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="Redlining service not available. Please ensure redlining_service.py is implemented."
+        )
+
+    try:
+        log_info(
+            f"Starting redlining session for document {redlining_request.document_id} (category: {redlining_request.category})",
+            "REDLINING"
+        )
+        result = app.state.redlining_service.start_redlining_session(
+            document_id=redlining_request.document_id,
+            category=redlining_request.category
+        )
+        log_success(f"Redlining session created: {result.get('session_id', 'unknown')}", "REDLINING")
+        return {
+            "success": True,
+            **result
+        }
+    except ValueError as e:
+        log_warning(f"Invalid redlining request: {str(e)}", "REDLINING")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        log_error(f"Failed to start redlining session: {str(e)}", "REDLINING")
+        raise HTTPException(status_code=500, detail=f"Failed to start redlining session: {str(e)}")
+
+@app.get("/api/redlining/session/{session_id}")
+async def get_redlining_session(session_id: str):
+    """Get redlining session details with full comparison results"""
+    if not REDLINING_SERVICE_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="Redlining service not available. Please ensure redlining_service.py is implemented."
+        )
+
+    try:
+        log_info(f"Fetching redlining session: {session_id}", "REDLINING")
+        session = app.state.redlining_service.get_session(session_id)
+        if not session:
+            log_warning(f"Redlining session not found: {session_id}", "REDLINING")
+            raise HTTPException(status_code=404, detail="Session not found")
+        log_success(f"Retrieved redlining session: {session_id}", "REDLINING")
+        return {
+            "success": True,
+            "session": session
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_error(f"Failed to get redlining session {session_id}: {str(e)}", "REDLINING")
+        raise HTTPException(status_code=500, detail=f"Failed to get session: {str(e)}")
+
+@app.get("/api/redlining/session/{session_id}/comparisons")
+async def get_session_comparisons(session_id: str):
+    """Get all clause comparisons for a redlining session"""
+    if not REDLINING_SERVICE_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="Redlining service not available. Please ensure redlining_service.py is implemented."
+        )
+
+    try:
+        log_info(f"Fetching comparisons for session: {session_id}", "REDLINING")
+        comparisons = app.state.redlining_service.get_session_comparisons(session_id)
+        log_success(f"Retrieved {len(comparisons)} comparisons for session {session_id}", "REDLINING")
+        return {
+            "success": True,
+            "session_id": session_id,
+            "comparison_count": len(comparisons),
+            "comparisons": comparisons
+        }
+    except Exception as e:
+        log_error(f"Failed to get comparisons for session {session_id}: {str(e)}", "REDLINING")
+        raise HTTPException(status_code=500, detail=f"Failed to get comparisons: {str(e)}")
+
+@app.delete("/api/redlining/session/{session_id}")
+@limiter.limit("10/minute")
+async def delete_redlining_session(request: Request, session_id: str):
+    """Delete a redlining session and all associated data"""
+    if not REDLINING_SERVICE_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="Redlining service not available. Please ensure redlining_service.py is implemented."
+        )
+
+    try:
+        log_info(f"Deleting redlining session: {session_id}", "REDLINING")
+        success = app.state.redlining_service.delete_session(session_id)
+        if not success:
+            log_warning(f"Redlining session not found: {session_id}", "REDLINING")
+            raise HTTPException(status_code=404, detail="Session not found")
+        log_success(f"Redlining session deleted: {session_id}", "REDLINING")
+        return {
+            "success": True,
+            "message": "Session deleted successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_error(f"Failed to delete redlining session {session_id}: {str(e)}", "REDLINING")
+        raise HTTPException(status_code=500, detail=f"Failed to delete session: {str(e)}")
 
 @app.post("/api/chat")
 @limiter.limit("20/minute")

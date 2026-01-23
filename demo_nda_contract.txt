@@ -1,0 +1,105 @@
+MUTUAL NON-DISCLOSURE AGREEMENT
+
+This Mutual Non-Disclosure Agreement (the "Agreement") is entered into as of January 21, 2026 (the "Effective Date"), by and between:
+
+ACME Corporation, a Delaware corporation with offices at 123 Technology Drive, San Francisco, CA 94105 ("ACME"), and
+
+GlobalTech Solutions Inc., a California corporation with offices at 456 Innovation Boulevard, Palo Alto, CA 94301 ("GlobalTech").
+
+ACME and GlobalTech are each referred to individually as a "Party" and collectively as the "Parties."
+
+RECITALS
+
+WHEREAS, the Parties wish to explore a potential business relationship concerning collaborative software development and technology integration (the "Purpose"); and
+
+WHEREAS, in connection with the Purpose, each Party may disclose to the other Party certain confidential and proprietary information; and
+
+WHEREAS, the Parties desire to protect the confidentiality of such information.
+
+NOW, THEREFORE, in consideration of the mutual covenants and agreements contained herein, and for other good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged, the Parties agree as follows:
+
+1. DEFINITION OF CONFIDENTIAL INFORMATION
+
+1.1 "Confidential Information" means any and all technical and non-technical information disclosed by one Party (the "Disclosing Party") to the other Party (the "Receiving Party"), including but not limited to: (a) trade secrets, proprietary information, inventions, ideas, processes, formulas, source and object codes, data, programs, other works of authorship, know-how, improvements, discoveries, developments, designs, and techniques; (b) information regarding products, services, plans, research, product designs, prices, costs, profits, markets, sales, suppliers, customers, and customer lists; (c) business plans, financial information, budgets, projections, and strategic plans; and (d) any other information that is marked as "Confidential," "Proprietary," or with a similar designation, or that would reasonably be considered confidential given the nature of the information and the circumstances of disclosure.
+
+1.2 Confidential Information may be disclosed in written, oral, electronic, visual, or other tangible or intangible forms.
+
+2. EXCLUSIONS FROM CONFIDENTIAL INFORMATION
+
+Confidential Information shall not include information that:
+
+(a) was known to the Receiving Party prior to disclosure by the Disclosing Party, as evidenced by written records;
+
+(b) is or becomes publicly available through no breach of this Agreement by the Receiving Party;
+
+(c) is rightfully received by the Receiving Party from a third party without breach of any confidentiality obligation;
+
+(d) is independently developed by the Receiving Party without use of or reference to the Confidential Information, as evidenced by written records; or
+
+(e) is required to be disclosed by law, regulation, or court order, provided that the Receiving Party provides the Disclosing Party with prompt written notice of such requirement and cooperates with the Disclosing Party's efforts to seek a protective order or other appropriate remedy.
+
+3. OBLIGATIONS OF RECEIVING PARTY
+
+3.1 Non-Disclosure. The Receiving Party agrees to hold the Confidential Information in strict confidence and not to disclose such Confidential Information to any third parties without the prior written consent of the Disclosing Party.
+
+3.2 Limited Use. The Receiving Party shall use the Confidential Information solely for the Purpose and shall not use the Confidential Information for any other purpose without the prior written consent of the Disclosing Party.
+
+3.3 Protection. The Receiving Party shall protect the Confidential Information using the same degree of care it uses to protect its own confidential information of a similar nature, but in no event less than reasonable care.
+
+3.4 Disclosure to Representatives. The Receiving Party may disclose Confidential Information only to its employees, officers, directors, consultants, advisors, and agents (collectively, "Representatives") who have a legitimate need to know such information for the Purpose and who are bound by confidentiality obligations at least as restrictive as those contained herein. The Receiving Party shall be responsible for any breach of this Agreement by its Representatives.
+
+4. TERM AND TERMINATION
+
+4.1 Term. This Agreement shall commence on the Effective Date and continue for a period of three (3) years, unless earlier terminated by either Party upon sixty (60) days prior written notice to the other Party.
+
+4.2 Survival. The obligations set forth in Sections 3, 5, 6, 7, and 8 shall survive termination or expiration of this Agreement for a period of five (5) years.
+
+4.3 Return of Materials. Upon termination or expiration of this Agreement, or upon request by the Disclosing Party at any time, the Receiving Party shall promptly return or destroy (at the Disclosing Party's option) all Confidential Information, including all copies, notes, and derivatives thereof, and shall certify in writing to the Disclosing Party that it has done so.
+
+5. OWNERSHIP AND NO LICENSE
+
+5.1 Ownership. All Confidential Information remains the sole property of the Disclosing Party. Nothing in this Agreement shall be construed as granting any rights to the Receiving Party, by license or otherwise, to any Confidential Information or any patent, copyright, trademark, or other intellectual property right of the Disclosing Party.
+
+5.2 No Obligation. Neither Party is under any obligation to disclose Confidential Information to the other Party, and neither Party is obligated to enter into any further agreement or relationship as a result of this Agreement.
+
+6. NO WARRANTY
+
+THE CONFIDENTIAL INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. THE DISCLOSING PARTY MAKES NO REPRESENTATION OR WARRANTY REGARDING THE ACCURACY OR COMPLETENESS OF THE CONFIDENTIAL INFORMATION.
+
+7. REMEDIES
+
+7.1 Injunctive Relief. The Receiving Party acknowledges that any breach or threatened breach of this Agreement may cause irreparable harm to the Disclosing Party for which monetary damages would be an inadequate remedy. Accordingly, the Disclosing Party shall be entitled to seek equitable relief, including injunction and specific performance, in addition to all other remedies available at law or in equity.
+
+7.2 Indemnification. The Receiving Party agrees to indemnify and hold harmless the Disclosing Party from and against any and all losses, damages, liabilities, costs, and expenses (including reasonable attorneys' fees) arising out of or resulting from any breach of this Agreement by the Receiving Party or its Representatives.
+
+8. GENERAL PROVISIONS
+
+8.1 Governing Law. This Agreement shall be governed by and construed in accordance with the laws of the State of California, without regard to its conflict of laws principles.
+
+8.2 Dispute Resolution. Any dispute arising out of or relating to this Agreement shall first be subject to good faith negotiation between the Parties. If the dispute cannot be resolved through negotiation within thirty (30) days, the dispute shall be resolved by binding arbitration in San Francisco, California, in accordance with the Commercial Arbitration Rules of the American Arbitration Association. The arbitrator's decision shall be final and binding, and judgment may be entered upon it in any court of competent jurisdiction.
+
+8.3 Entire Agreement. This Agreement constitutes the entire agreement between the Parties concerning the subject matter hereof and supersedes all prior or contemporaneous agreements, understandings, and communications, whether written or oral, relating to such subject matter.
+
+8.4 Amendment. This Agreement may not be amended or modified except by a written instrument signed by both Parties.
+
+8.5 Waiver. No waiver of any provision of this Agreement shall be effective unless in writing and signed by the Party against whom such waiver is sought to be enforced. No waiver of any breach shall be deemed a waiver of any subsequent breach.
+
+8.6 Severability. If any provision of this Agreement is found to be invalid or unenforceable, the remaining provisions shall continue in full force and effect, and the invalid or unenforceable provision shall be reformed to the extent necessary to make it valid and enforceable while preserving its intent to the greatest extent possible.
+
+8.7 Assignment. Neither Party may assign this Agreement or any rights or obligations hereunder without the prior written consent of the other Party, except that either Party may assign this Agreement to a successor in connection with a merger, acquisition, or sale of all or substantially all of its assets, provided that the assignee agrees in writing to be bound by the terms of this Agreement.
+
+8.8 Notices. All notices under this Agreement shall be in writing and shall be deemed given when delivered personally, sent by confirmed facsimile or electronic mail, or three (3) business days after being sent by certified or registered mail, return receipt requested, postage prepaid, to the addresses set forth above or to such other address as either Party may designate in writing.
+
+8.9 Counterparts. This Agreement may be executed in counterparts, each of which shall be deemed an original and all of which together shall constitute one and the same instrument.
+
+8.10 Independent Contractors. The Parties are independent contractors, and nothing in this Agreement shall be construed to create a partnership, joint venture, employment, or agency relationship between them.
+
+IN WITNESS WHEREOF, the Parties have executed this Mutual Non-Disclosure Agreement as of the Effective Date.
+
+ACME CORPORATION                    GLOBALTECH SOLUTIONS INC.
+
+
+By: _________________________       By: _________________________
+Name: Sarah Mitchell                Name: David Chen
+Title: Chief Executive Officer      Title: Chief Technology Officer
+Date: January 21, 2026             Date: January 21, 2026

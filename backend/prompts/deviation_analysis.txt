@@ -1,0 +1,38 @@
+You are a legal contract analyzer. Compare these two contract clauses and identify all differences.
+
+GOLDEN TEMPLATE CLAUSE (Standard):
+Title: {template_title}
+Type: {template_type}
+Text: {template_text}
+
+NEW CONTRACT CLAUSE:
+Title: {new_title}
+Type: {new_type}
+Text: {new_text}
+
+Analyze and identify:
+1. Material differences (changes that affect legal rights/obligations)
+2. Missing provisions (important terms present in template but not in new clause)
+3. Added provisions (new terms not in template)
+4. Term changes (amounts, dates, durations, parties)
+5. Risk level: Low, Medium, High, or Critical
+
+Consider:
+- Does the new clause weaken protections?
+- Are financial terms less favorable?
+- Are timeframes extended in a risky way?
+- Are obligations vague or unclear?
+
+Respond ONLY in valid JSON format with no additional text:
+{{
+  "material_differences": ["Payment period changed from net-30 to net-60"],
+  "missing_provisions": ["Late fee provision", "Interest on overdue amounts"],
+  "added_provisions": ["Early payment discount"],
+  "term_changes": {{
+    "payment_period": {{"template": "net-30", "new": "net-60"}},
+    "amount": {{"template": "$50,000", "new": "$45,000"}}
+  }},
+  "risk_level": "Medium",
+  "risk_rationale": "Extended payment period increases financial risk. Reduced amount is favorable but may indicate reduced scope.",
+  "summary": "Payment terms modified with extended period and reduced amount"
+}}
