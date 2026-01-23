@@ -205,6 +205,7 @@ class RedliningService:
     def _store_comparison_results(self, session_id: str, comparison: Dict):
         """
         Store clause comparison results in the database
+        Also generates and stores individual text-level changes for each comparison
 
         Args:
             session_id: The session ID
@@ -232,6 +233,15 @@ class RedliningService:
                     "Low"
                 ))
 
+                # Generate and store individual changes (none for matched clauses)
+                self._store_individual_changes(
+                    comparison_id,
+                    "matched",
+                    item.get("new_clause"),
+                    item.get("template_clause"),
+                    cursor
+                )
+
             # Store modified clauses
             for item in comparison["modified"]:
                 comparison_id = str(uuid.uuid4())
@@ -256,6 +266,15 @@ class RedliningService:
                     summary
                 ))
 
+                # Generate and store individual changes for modified clauses
+                self._store_individual_changes(
+                    comparison_id,
+                    "modified",
+                    item.get("new_clause"),
+                    item.get("template_clause"),
+                    cursor
+                )
+
             # Store missing clauses
             for item in comparison["missing"]:
                 comparison_id = str(uuid.uuid4())
@@ -273,6 +292,15 @@ class RedliningService:
                     0.0,
                     "High"
                 ))
+
+                # Generate and store individual changes for missing clauses
+                self._store_individual_changes(
+                    comparison_id,
+                    "missing",
+                    None,
+                    item.get("clause"),
+                    cursor
+                )
 
             # Store extra clauses
             for item in comparison["extra"]:
@@ -292,6 +320,15 @@ class RedliningService:
                     "Medium"
                 ))
 
+                # Generate and store individual changes for extra clauses
+                self._store_individual_changes(
+                    comparison_id,
+                    "extra",
+                    item.get("clause"),
+                    None,
+                    cursor
+                )
+
             conn.commit()
             log_info(f"Stored comparison results for session: {session_id}", "REDLINING_SERVICE")
 
@@ -301,6 +338,64 @@ class RedliningService:
             raise
         finally:
             conn.close()
+
+    def _store_individual_changes(
+        self,
+        comparison_id: str,
+        comparison_type: str,
+        new_clause: Optional[Dict],
+        template_clause: Optional[Dict],
+        cursor
+    ):
+        """
+        Generate and store individual text-level changes for a clause comparison
+
+        Args:
+            comparison_id: The clause comparison ID
+            comparison_type: matched, modified, missing, or extra
+            new_clause: The new contract clause (None for missing clauses)
+            template_clause: The template clause (None for extra clauses)
+            cursor: Database cursor for inserting records
+        """
+        log_info(f"_store_individual_changes called for comparison {comparison_id[:8]}, type: {comparison_type}", "REDLINING_SERVICE")
+        try:
+            # Generate individual changes using ComparisonEngine
+            log_info(f"Calling comparison_engine.generate_individual_changes for {comparison_type}", "REDLINING_SERVICE")
+            changes = self.comparison_engine.generate_individual_changes(
+                comparison_type,
+                new_clause,
+                template_clause
+            )
+            log_info(f"Generated {len(changes)} individual changes for comparison {comparison_id[:8]}", "REDLINING_SERVICE")
+
+            # Store each change in the database
+            for change in changes:
+                change_id = str(uuid.uuid4())
+                cursor.execute("""
+                    INSERT INTO annotation_changes (
+                        id, comparison_id, change_type, original_text,
+                        suggested_text, start_offset, end_offset,
+                        risk_level, rationale, user_action
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    change_id,
+                    comparison_id,
+                    change.get("change_type"),
+                    change.get("original_text"),
+                    change.get("suggested_text"),
+                    change.get("start_offset", 0),
+                    change.get("end_offset", 0),
+                    change.get("risk_level", "Low"),
+                    change.get("rationale", ""),
+                    "pending"  # Default user action
+                ))
+
+            if changes:
+                log_info(f"Stored {len(changes)} individual changes for comparison {comparison_id[:8]}", "REDLINING_SERVICE")
+
+        except Exception as e:
+            # Log error but don't fail the entire transaction
+            log_error(f"Failed to store individual changes for comparison {comparison_id[:8]}: {str(e)}", "REDLINING_SERVICE")
 
     def get_session(self, session_id: str) -> Optional[Dict]:
         """

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './RedliningMode.css';
+import AnnotatedDocumentViewer from './AnnotatedDocumentViewer';
 
 /**
  * RedliningMode - Main container for contract redlining workflow
@@ -16,6 +17,7 @@ const RedliningMode = ({ onExit }) => {
   const [sessionData, setSessionData] = useState(null);
   const [comparisons, setComparisons] = useState([]);
   const [loadingComparisons, setLoadingComparisons] = useState(false);
+  const [reviewView, setReviewView] = useState('document'); // 'document' or 'comparison'
   const [processingStatus, setProcessingStatus] = useState({
     extraction: 'pending',
     matching: 'pending',
@@ -332,14 +334,43 @@ const RedliningMode = ({ onExit }) => {
       <div className="redlining-review">
         <div className="review-header">
           <h2>🔍 Clause-by-Clause Review</h2>
-          <button className="btn-secondary" onClick={() => setCurrentStep('results')}>
-            ← Back to Results
-          </button>
+          <div className="review-controls">
+            <div className="view-toggle">
+              <button
+                className={reviewView === 'document' ? 'toggle-btn active' : 'toggle-btn'}
+                onClick={() => setReviewView('document')}
+              >
+                📄 Document View
+              </button>
+              <button
+                className={reviewView === 'comparison' ? 'toggle-btn active' : 'toggle-btn'}
+                onClick={() => setReviewView('comparison')}
+              >
+                📋 Comparison Cards
+              </button>
+            </div>
+            <button className="btn-secondary" onClick={() => setCurrentStep('results')}>
+              ← Back to Results
+            </button>
+          </div>
         </div>
 
         <div className="review-content">
-          {/* Matched Clauses */}
-          {grouped.matched.length > 0 && (
+          {/* Document View - Visual Redlining */}
+          {reviewView === 'document' && sessionData && (
+            <div className="document-view-container">
+              <AnnotatedDocumentViewer
+                documentId={sessionData.uploaded_document_id}
+                sessionId={sessionData.session_id}
+              />
+            </div>
+          )}
+
+          {/* Comparison Cards View */}
+          {reviewView === 'comparison' && (
+            <>
+              {/* Matched Clauses */}
+              {grouped.matched.length > 0 && (
             <div className="comparison-section matched-section">
               <h3>✓ Matched Clauses ({grouped.matched.length})</h3>
               {grouped.matched.map((comp) => (
@@ -429,10 +460,12 @@ const RedliningMode = ({ onExit }) => {
             </div>
           )}
 
-          {comparisons.length === 0 && (
-            <div className="no-comparisons">
-              <p>No comparison data available</p>
-            </div>
+              {comparisons.length === 0 && (
+                <div className="no-comparisons">
+                  <p>No comparison data available</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

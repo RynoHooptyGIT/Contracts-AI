@@ -15,6 +15,50 @@ from .embedding_service import EmbeddingService
 from .vector_store import FAISSVectorStore
 
 
+# LLM Prompt Template for individual change identification
+INDIVIDUAL_CHANGES_PROMPT = '''You are a legal contract analyzer. Compare these two contract clauses and identify SPECIFIC text-level changes.
+
+TEMPLATE CLAUSE (standard):
+{template_text}
+
+NEW CONTRACT CLAUSE:
+{new_text}
+
+For each difference, identify:
+1. Type: "addition" (text added in new), "deletion" (text removed from template), or "modification" (text changed)
+2. Original text (what was in template, or empty string for additions)
+3. Suggested text (what should replace it based on template, or empty string for deletions)
+4. Start position (character offset in NEW clause where change occurs, 0 if deletion)
+5. End position (character offset in NEW clause where change ends, 0 if deletion)
+6. Risk level: Low, Medium, High
+7. Brief rationale (why this change matters)
+
+BE SPECIFIC - identify individual words/phrases, not entire paragraphs.
+
+Respond ONLY in valid JSON format:
+{{
+  "changes": [
+    {{
+      "change_type": "modification",
+      "original_text": "30 days",
+      "suggested_text": "net-30 days",
+      "start_offset": 45,
+      "end_offset": 52,
+      "risk_level": "Low",
+      "rationale": "Added clarity with 'net-' prefix"
+    }},
+    {{
+      "change_type": "deletion",
+      "original_text": "late fee provision",
+      "suggested_text": "",
+      "start_offset": 0,
+      "end_offset": 0,
+      "risk_level": "High",
+      "rationale": "Missing late fee provision increases financial risk"
+    }}
+  ]
+}}'''
+
 # LLM Prompt Template for deviation analysis
 DEVIATION_ANALYSIS_PROMPT = '''You are a legal contract analyzer. Compare these two contract clauses and identify all differences.
 
@@ -435,3 +479,156 @@ class ComparisonEngine:
 
         log_info(f"Found {len(critical)} critical deviations", "COMPARISON_ENGINE")
         return critical
+
+    def generate_individual_changes(self, comparison_type: str, new_clause: Optional[Dict] = None,
+                                    template_clause: Optional[Dict] = None) -> List[Dict]:
+        """
+        Generate individual text-level changes from a clause comparison
+
+        For modified clauses: Uses LLM to identify specific additions, deletions, modifications
+        For missing clauses: Returns entire clause as single "missing_clause" change
+        For extra clauses: Returns entire clause as single "extra_clause" change
+
+        Args:
+            comparison_type: 'matched', 'modified', 'missing', or 'extra'
+            new_clause: The clause from new contract (None for missing)
+            template_clause: The clause from template (None for extra)
+
+        Returns:
+            List of individual change dictionaries ready for annotation_changes table
+        """
+        log_info(f"Generating individual changes for {comparison_type} clause", "COMPARISON_ENGINE")
+
+        if comparison_type == 'matched':
+            # No changes for matched clauses
+            return []
+
+        elif comparison_type == 'missing':
+            # Entire template clause is missing from new contract
+            if not template_clause:
+                return []
+
+            return [{
+                "change_type": "missing_clause",
+                "original_text": None,
+                "suggested_text": template_clause["text"],
+                "start_offset": 0,
+                "end_offset": 0,
+                "risk_level": "High",
+                "rationale": f"This {template_clause['type']} clause is missing from the contract but exists in the template"
+            }]
+
+        elif comparison_type == 'extra':
+            # Entire new clause doesn't exist in template
+            if not new_clause:
+                return []
+
+            return [{
+                "change_type": "extra_clause",
+                "original_text": new_clause["text"],
+                "suggested_text": None,
+                "start_offset": 0,
+                "end_offset": len(new_clause["text"]),
+                "risk_level": "Medium",
+                "rationale": f"This {new_clause['type']} clause exists in the contract but not in the template"
+            }]
+
+        elif comparison_type == 'modified':
+            # Use LLM to identify specific text-level changes
+            if not new_clause or not template_clause:
+                return []
+
+            try:
+                return self._identify_individual_changes_llm(new_clause, template_clause)
+            except Exception as e:
+                log_error(f"Failed to identify individual changes: {str(e)}", "COMPARISON_ENGINE")
+                # Fallback: Return entire clause as one modification
+                return [{
+                    "change_type": "modification",
+                    "original_text": template_clause["text"],
+                    "suggested_text": new_clause["text"],
+                    "start_offset": 0,
+                    "end_offset": len(new_clause["text"]),
+                    "risk_level": "Medium",
+                    "rationale": "Clause has been modified (detailed analysis failed)"
+                }]
+
+        return []
+
+    def _identify_individual_changes_llm(self, new_clause: Dict, template_clause: Dict) -> List[Dict]:
+        """
+        Use LLM to identify specific text-level changes between clauses
+
+        Args:
+            new_clause: The clause from new contract
+            template_clause: The clause from golden template
+
+        Returns:
+            List of individual change dictionaries
+        """
+        log_info(f"Using LLM to identify individual changes in: {new_clause['title']}", "COMPARISON_ENGINE")
+
+        # Prepare prompt
+        prompt = INDIVIDUAL_CHANGES_PROMPT.format(
+            template_text=template_clause["text"],
+            new_text=new_clause["text"]
+        )
+
+        # Call LLM
+        try:
+            with httpx.Client() as client:
+                payload = {
+                    "model": self.model_name,
+                    "messages": [
+                        {"role": "user", "content": prompt}
+                    ],
+                    "stream": False,
+                    "options": {
+                        "temperature": 0.1  # Very low temperature for precise extraction
+                    }
+                }
+
+                response = client.post(
+                    self.ollama_url,
+                    json=payload,
+                    timeout=90.0  # Longer timeout for detailed analysis
+                )
+
+                if response.status_code != 200:
+                    raise Exception(f"Ollama returned status {response.status_code}: {response.text}")
+
+                result = response.json()
+
+                # Extract content
+                if "message" in result and "content" in result["message"]:
+                    content = result["message"]["content"]
+                else:
+                    raise Exception(f"Unexpected response format: {result}")
+
+                # Parse JSON from content (strip markdown code blocks if present)
+                content = content.strip()
+                if content.startswith("```json"):
+                    content = content[7:]
+                if content.startswith("```"):
+                    content = content[3:]
+                if content.endswith("```"):
+                    content = content[:-3]
+                content = content.strip()
+
+                parsed = json.loads(content)
+
+                if "changes" not in parsed or not isinstance(parsed["changes"], list):
+                    raise Exception("Invalid response format: missing 'changes' array")
+
+                changes = parsed["changes"]
+                log_success(f"Identified {len(changes)} individual changes", "COMPARISON_ENGINE")
+
+                return changes
+
+        except json.JSONDecodeError as e:
+            log_error(f"Failed to parse LLM JSON response: {str(e)}", "COMPARISON_ENGINE")
+            raise Exception(f"Failed to parse individual changes: {str(e)}")
+
+        except Exception as e:
+            log_error(f"LLM call error: {str(e)}", "COMPARISON_ENGINE")
+            raise

@@ -21,7 +21,7 @@ services:
       - "8001:8001"
     environment:
       # Point to native Ollama on host machine (not containerized)
-      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176
       - OLLAMA_URL=http://host.docker.internal:11434/api/chat  # Host Ollama
       - DATABASE_PATH=/app/data/documents.db
       - FAISS_INDEX_PATH=/app/data/faiss_index

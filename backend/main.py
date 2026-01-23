@@ -11,7 +11,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from database import init_database, migrate_database, migrate_redlining_tables
+from database import init_database, migrate_database, migrate_redlining_tables, migrate_visual_annotation_tables
 from services.document_manager import DocumentManager
 from services.document_parser import parse_file
 from logger import log_buffer, log_info, log_success, log_error, log_warning
@@ -69,8 +69,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["POST", "GET", "DELETE"],
-    allow_headers=["Content-Type"],
+    allow_methods=["*"],  # Allow all HTTP methods including OPTIONS
+    allow_headers=["*"],  # Allow all headers
 )
 
 class ChatRequest(BaseModel):
@@ -133,6 +133,8 @@ async def startup_event():
     migrate_database()
     # Migrate redlining tables
     migrate_redlining_tables()
+    # Migrate visual annotation tables
+    migrate_visual_annotation_tables()
     # Then ensure all tables exist
     init_database()
     log_success("Database ready", "STARTUP")
@@ -611,6 +613,39 @@ async def extract_clauses(request: Request, document_id: str):
         log_error(f"Failed to extract clauses from document {document_id}: {str(e)}", "CLAUSES")
         raise HTTPException(status_code=500, detail=f"Failed to extract clauses: {str(e)}")
 
+@app.get("/api/documents/{document_id}/render-html")
+@limiter.limit("30/minute")
+async def render_document_html(request: Request, document_id: str):
+    """
+    Render document as HTML with preserved formatting and clause markers
+    Sanitizes HTML to prevent XSS attacks
+    """
+    try:
+        log_info(f"Rendering document {document_id} to HTML", "RENDERER")
+
+        # Import DocumentRenderer here to avoid startup errors if service not available
+        from services.document_renderer import DocumentRenderer
+
+        # Get database connection from DocumentManager
+        db_conn = app.state.doc_manager._get_connection()
+        renderer = DocumentRenderer(db_conn)
+        result = await renderer.render_to_html(document_id)
+
+        log_success(f"Rendered document {document_id} successfully", "RENDERER")
+        return {
+            "success": True,
+            "document_id": document_id,
+            "html_content": result["html_content"],
+            "css_content": result["css_content"],
+            "clause_markers": result["clause_markers"]
+        }
+    except ValueError as e:
+        log_warning(f"Invalid document render request: {str(e)}", "RENDERER")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        log_error(f"Failed to render document {document_id}: {str(e)}", "RENDERER")
+        raise HTTPException(status_code=500, detail=f"Failed to render document: {str(e)}")
+
 # ==================== Redlining Session Endpoints ====================
 
 @app.post("/api/redlining/start")
@@ -692,6 +727,65 @@ async def get_session_comparisons(session_id: str):
     except Exception as e:
         log_error(f"Failed to get comparisons for session {session_id}: {str(e)}", "REDLINING")
         raise HTTPException(status_code=500, detail=f"Failed to get comparisons: {str(e)}")
+
+@app.get("/api/redlining/session/{session_id}/individual-changes")
+async def get_session_individual_changes(session_id: str):
+    """Get all individual text-level changes for a redlining session"""
+    if not REDLINING_SERVICE_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="Redlining service not available. Please ensure redlining_service.py is implemented."
+        )
+
+    try:
+        log_info(f"Fetching individual changes for session: {session_id}", "REDLINING")
+
+        # Query annotation_changes table joined with clause_comparisons
+        db_conn = app.state.doc_manager._get_connection()
+        cursor = db_conn.cursor()
+
+        cursor.execute("""
+            SELECT ac.id, ac.comparison_id, ac.change_type, ac.original_text,
+                   ac.suggested_text, ac.start_offset, ac.end_offset,
+                   ac.risk_level, ac.rationale, ac.user_action,
+                   cc.comparison_type, cc.new_clause_id, cc.template_clause_id
+            FROM annotation_changes ac
+            JOIN clause_comparisons cc ON ac.comparison_id = cc.id
+            WHERE cc.session_id = ?
+            ORDER BY cc.comparison_type, ac.risk_level DESC
+        """, (session_id,))
+
+        rows = cursor.fetchall()
+        db_conn.close()
+
+        changes = []
+        for row in rows:
+            changes.append({
+                "id": row[0],
+                "comparison_id": row[1],
+                "change_type": row[2],
+                "original_text": row[3],
+                "suggested_text": row[4],
+                "start_offset": row[5],
+                "end_offset": row[6],
+                "risk_level": row[7],
+                "rationale": row[8],
+                "user_action": row[9],
+                "clause_comparison_type": row[10],
+                "new_clause_id": row[11],
+                "template_clause_id": row[12]
+            })
+
+        log_success(f"Retrieved {len(changes)} individual changes for session {session_id}", "REDLINING")
+        return {
+            "success": True,
+            "session_id": session_id,
+            "change_count": len(changes),
+            "changes": changes
+        }
+    except Exception as e:
+        log_error(f"Failed to get individual changes for session {session_id}: {str(e)}", "REDLINING")
+        raise HTTPException(status_code=500, detail=f"Failed to get changes: {str(e)}")
 
 @app.delete("/api/redlining/session/{session_id}")
 @limiter.limit("10/minute")

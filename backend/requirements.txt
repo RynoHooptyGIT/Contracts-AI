@@ -28,6 +28,7 @@ python-multipart==0.0.6       # File upload support
 mammoth==1.6.0                # DOCX to HTML conversion
 beautifulsoup4==4.12.3        # HTML parsing and manipulation
 lxml==5.1.0                   # XML/HTML processing (required by beautifulsoup4)
+bleach==6.1.0                 # HTML sanitization (XSS protection)
 
 # PDF/DOCX Handling
 pdfplumber==0.11.0            # PDF text extraction and analysis

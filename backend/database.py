@@ -232,3 +232,58 @@ def migrate_redlining_tables():
     conn.commit()
     conn.close()
     print("Contract redlining tables migration completed successfully")
+
+def migrate_visual_annotation_tables():
+    """Migrate database to add visual annotation system tables"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    # 1. Create annotation_changes table (individual text-level changes)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS annotation_changes (
+            id TEXT PRIMARY KEY,
+            comparison_id TEXT NOT NULL,
+            change_type TEXT NOT NULL,
+            original_text TEXT,
+            suggested_text TEXT,
+            start_offset INTEGER,
+            end_offset INTEGER,
+            risk_level TEXT,
+            rationale TEXT,
+            user_action TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (comparison_id) REFERENCES clause_comparisons(id)
+        )
+    """)
+
+    # 2. Create rendered_documents table (HTML rendering cache)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS rendered_documents (
+            id TEXT PRIMARY KEY,
+            document_id TEXT NOT NULL UNIQUE,
+            html_content TEXT NOT NULL,
+            css_content TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (document_id) REFERENCES documents(id)
+        )
+    """)
+
+    # Create indexes for performance
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_changes_comparison
+        ON annotation_changes(comparison_id)
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_changes_action
+        ON annotation_changes(user_action)
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_rendered_document
+        ON rendered_documents(document_id)
+    """)
+
+    conn.commit()
+    conn.close()
+    print("Visual annotation tables migration completed successfully")
