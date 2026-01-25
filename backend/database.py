@@ -287,3 +287,39 @@ def migrate_visual_annotation_tables():
     conn.commit()
     conn.close()
     print("Visual annotation tables migration completed successfully")
+
+def migrate_multi_template_support():
+    """Migrate database to add multi-template comparison support"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    # Check if template_ids column exists in redlining_sessions table
+    cursor.execute("PRAGMA table_info(redlining_sessions)")
+    session_columns = [col[1] for col in cursor.fetchall()]
+
+    if 'template_ids' not in session_columns:
+        cursor.execute("ALTER TABLE redlining_sessions ADD COLUMN template_ids TEXT")
+        print("Added template_ids column to redlining_sessions table")
+
+    # Check if source_template_id and consensus_level columns exist in annotation_changes table
+    cursor.execute("PRAGMA table_info(annotation_changes)")
+    changes_columns = [col[1] for col in cursor.fetchall()]
+
+    if 'source_template_id' not in changes_columns:
+        cursor.execute("ALTER TABLE annotation_changes ADD COLUMN source_template_id TEXT")
+        print("Added source_template_id column to annotation_changes table")
+
+    if 'consensus_level' not in changes_columns:
+        cursor.execute("ALTER TABLE annotation_changes ADD COLUMN consensus_level TEXT DEFAULT 'single'")
+        print("Added consensus_level column to annotation_changes table")
+
+    # Create index for consensus_level for better query performance
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_changes_consensus
+        ON annotation_changes(consensus_level)
+    """)
+    print("Created index idx_changes_consensus on annotation_changes table")
+
+    conn.commit()
+    conn.close()
+    print("Multi-template support migration completed successfully")

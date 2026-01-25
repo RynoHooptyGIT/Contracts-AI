@@ -172,54 +172,73 @@ class ProgressiveRedliningService:
 
             log_success(f"Extracted {len(new_clauses)} clauses from document", "PROGRESSIVE_REDLINING")
 
-            # Step 2: Find best matching template
-            template_match = self.template_matcher.find_best_template(document_id, category)
+            # Step 2: Find top matching templates (multi-template support)
+            top_templates = self.template_matcher.find_top_templates(document_id, category, top_n=3)
 
-            if not template_match:
-                log_warning("No matching template found", "PROGRESSIVE_REDLINING")
+            if not top_templates:
+                log_warning("No matching templates found", "PROGRESSIVE_REDLINING")
                 session_id = self._create_session(document_id, None, None, category, status="no_template")
                 return {
                     "session_id": session_id,
                     "status": "no_template",
-                    "message": "No matching golden template found",
-                    "uploaded_document_id": document_id
+                    "message": "No matching golden templates found",
+                    "uploaded_document_id": document_id,
+                    "templates": []
                 }
 
-            template_id = template_match["template_id"]
-            template_document_id = template_match["template"]["document_id"]
-            match_score = template_match["similarity_score"]
+            # Extract template IDs and document IDs
+            template_ids = [t["id"] for t in top_templates]
+            template_document_ids = [t["document_id"] for t in top_templates]
 
-            log_success(f"Found matching template {template_id[:8]} with score {match_score:.3f}", "PROGRESSIVE_REDLINING")
+            log_success(f"Found {len(top_templates)} matching templates:", "PROGRESSIVE_REDLINING")
+            for i, template in enumerate(top_templates, 1):
+                log_info(f"  #{i}: {template['id'][:8]} ({template['category']}) - {template['similarity_score']:.3f}", "PROGRESSIVE_REDLINING")
 
-            # Step 3: Extract clauses from template
-            template_clauses = self.clause_extractor.get_document_clauses(template_document_id)
-            if not template_clauses:
-                log_info("Template clauses not found, extracting...", "PROGRESSIVE_REDLINING")
-                template_clauses = self.clause_extractor.extract_clauses(template_document_id)
+            # Step 3: Extract clauses from all templates
+            all_template_clauses = []
+            for template_doc_id in template_document_ids:
+                template_clauses = self.clause_extractor.get_document_clauses(template_doc_id)
+                if not template_clauses:
+                    log_info(f"Template {template_doc_id[:8]} clauses not found, extracting...", "PROGRESSIVE_REDLINING")
+                    template_clauses = self.clause_extractor.extract_clauses(template_doc_id)
 
-            if not template_clauses:
-                raise Exception("Failed to extract clauses from template")
+                if template_clauses:
+                    all_template_clauses.append(template_clauses)
+                    log_success(f"Extracted {len(template_clauses)} clauses from template {template_doc_id[:8]}", "PROGRESSIVE_REDLINING")
+                else:
+                    log_warning(f"Failed to extract clauses from template {template_doc_id[:8]}", "PROGRESSIVE_REDLINING")
 
-            log_success(f"Extracted {len(template_clauses)} clauses from template", "PROGRESSIVE_REDLINING")
+            if not all_template_clauses:
+                raise Exception("Failed to extract clauses from any template")
 
-            # Step 4: Create session with status="processing"
-            session_id = self._create_session(
+            # Step 4: Create session with status="processing" and multiple template IDs
+            session_id = self._create_multi_template_session(
                 document_id,
-                template_id,
-                match_score,
+                template_ids,
+                top_templates[0]["similarity_score"],  # Use best match score
                 category,
                 status="processing"
             )
 
-            log_success(f"Created progressive session: {session_id}", "PROGRESSIVE_REDLINING")
+            log_success(f"Created progressive multi-template session: {session_id}", "PROGRESSIVE_REDLINING")
 
             # Return immediately - analysis happens via analyze_progressive()
             return {
                 "session_id": session_id,
                 "status": "processing",
                 "uploaded_document_id": document_id,
-                "template_id": template_id,
-                "template_document_id": template_document_id
+                "templates": [
+                    {
+                        "id": t["id"],
+                        "document_id": t["document_id"],
+                        "category": t["category"],
+                        "similarity_score": t["similarity_score"]
+                    }
+                    for t in top_templates
+                ],
+                # Keep backward compatibility
+                "template_id": template_ids[0] if template_ids else None,
+                "template_document_id": template_document_ids[0] if template_document_ids else None
             }
 
         except Exception as e:
@@ -235,6 +254,10 @@ class ProgressiveRedliningService:
         """
         Progressive analysis - yields events for each clause comparison
         This is the core streaming function that enables real-time UI updates
+
+        TODO: Multi-template support - Currently analyzes against single template (best match).
+        Future enhancement: Compare against all templates from session, calculate consensus_level,
+        store source_template_id for each change.
 
         Yields:
             {
@@ -535,6 +558,53 @@ class ProgressiveRedliningService:
         except Exception as e:
             conn.rollback()
             log_error(f"Failed to create session: {str(e)}", "PROGRESSIVE_REDLINING")
+            raise
+        finally:
+            conn.close()
+
+    def _create_multi_template_session(
+        self,
+        document_id: str,
+        template_ids: List[str],
+        match_score: Optional[float],
+        category: Optional[str],
+        risk_score: float = 0.0,
+        deviation_count: int = 0,
+        status: str = "processing"
+    ) -> str:
+        """Create a new multi-template redlining session in the database"""
+        import json
+
+        session_id = str(uuid.uuid4())
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                INSERT INTO redlining_sessions (
+                    id, uploaded_document_id, template_id, template_ids,
+                    template_match_score, category, status,
+                    overall_risk_score, deviation_count
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                session_id,
+                document_id,
+                template_ids[0] if template_ids else None,  # Keep backward compatibility
+                json.dumps(template_ids),  # Store all template IDs as JSON
+                match_score,
+                category,
+                status,
+                risk_score,
+                deviation_count
+            ))
+
+            conn.commit()
+            log_success(f"Created multi-template session with {len(template_ids)} templates", "PROGRESSIVE_REDLINING")
+            return session_id
+
+        except Exception as e:
+            conn.rollback()
+            log_error(f"Failed to create multi-template session: {str(e)}", "PROGRESSIVE_REDLINING")
             raise
         finally:
             conn.close()

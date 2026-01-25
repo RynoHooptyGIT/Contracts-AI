@@ -103,6 +103,75 @@ class TemplateMatcher:
             ]
         }
 
+    def find_top_templates(self, document_id: str, category: Optional[str] = None, top_n: int = 3) -> List[Dict]:
+        """
+        Find the top N matching golden templates for a document
+
+        Args:
+            document_id: The document ID to match
+            category: Optional category to filter templates (e.g., "NDA", "Employment")
+            top_n: Number of top templates to return (default: 3)
+
+        Returns:
+            List of top N templates with similarity scores, or empty list if no matches
+        """
+        log_info(f"Finding top {top_n} templates for document: {document_id}", "TEMPLATE_MATCHER")
+
+        # Get document text for comparison
+        document_text = self._get_document_text(document_id)
+        if not document_text:
+            log_error(f"Could not retrieve text for document: {document_id}", "TEMPLATE_MATCHER")
+            return []
+
+        # Get all active approved templates (optionally filtered by category)
+        templates = self._get_active_templates(category)
+        if not templates:
+            log_warning(f"No active templates found for category: {category}", "TEMPLATE_MATCHER")
+            return []
+
+        log_info(f"Comparing against {len(templates)} templates", "TEMPLATE_MATCHER")
+
+        # Calculate similarity for each template
+        template_scores = []
+        for template in templates:
+            try:
+                similarity_score = self._calculate_similarity(document_text, template['document_id'])
+                template_scores.append({
+                    "id": template['id'],
+                    "document_id": template['document_id'],
+                    "category": template['category'],
+                    "similarity_score": similarity_score,
+                    "notes": template.get('notes', ''),
+                    "approved_by": template.get('approved_by', ''),
+                    "approved_at": template.get('approved_at', '')
+                })
+                log_info(f"Template {template['id'][:8]} ({template['category']}): {similarity_score:.3f}", "TEMPLATE_MATCHER")
+            except Exception as e:
+                log_error(f"Failed to calculate similarity for template {template['id']}: {str(e)}", "TEMPLATE_MATCHER")
+                continue
+
+        if not template_scores:
+            log_warning("No template scores calculated", "TEMPLATE_MATCHER")
+            return []
+
+        # Sort by similarity score (highest first)
+        template_scores.sort(key=lambda x: x['similarity_score'], reverse=True)
+
+        # Filter to templates above threshold and limit to top_n
+        top_templates = [
+            template for template in template_scores
+            if template['similarity_score'] >= self.min_similarity_threshold
+        ][:top_n]
+
+        if top_templates:
+            log_success(f"Found {len(top_templates)} templates above threshold {self.min_similarity_threshold}", "TEMPLATE_MATCHER")
+            for i, template in enumerate(top_templates, 1):
+                log_info(f"  #{i}: {template['id'][:8]} ({template['category']}) - {template['similarity_score']:.3f}", "TEMPLATE_MATCHER")
+        else:
+            log_warning(f"No templates above threshold {self.min_similarity_threshold}", "TEMPLATE_MATCHER")
+
+        return top_templates
+
     def _get_active_templates(self, category: Optional[str] = None) -> List[Dict]:
         """
         Get all active approved golden templates

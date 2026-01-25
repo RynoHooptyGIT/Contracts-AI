@@ -1,0 +1,108 @@
+[INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=919d6c6f:20102
+[LOG] 🚀 [RedliningMode] Starting file upload: test_contract_nda.txt Category: NDA @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:32
+[LOG] 📤 [RedliningMode] Uploading to /api/documents/upload... @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:36
+[LOG] ✅ [RedliningMode] Upload response status: 200 @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:41
+[LOG] 📦 [RedliningMode] Upload result: {success: true, message: Document uploaded successfully, details: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:43
+[LOG] 🆔 [RedliningMode] Document ID: cc685f10-d3e4-40e6-9565-f854421e447c @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:50
+[LOG] 🔄 [RedliningMode] Starting progressive redlining... @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:51
+[LOG] ✅ [RedliningMode] Session response status: 200 @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:57
+[LOG] 📊 [RedliningMode] Session result: {success: true, session_id: 3ae48c1a-4afa-4bf8-a52b-a46913a2947b, status: processing, uploaded_document_id: cc685f10-d3e4-40e6-9565-f854421e447c, template_id: bdaee6b1-c3b0-41e5-ba30-c499206b769f} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:59
+[LOG] 💾 [RedliningMode] Session data stored @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:65
+[LOG] 🎯 [RedliningMode] Moved to review step @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:66
+[LOG] 🌊 [RedliningMode] Connecting to SSE stream... @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:68
+[LOG] Connecting to SSE stream for session: 3ae48c1a-4afa-4bf8-a52b-a46913a2947b @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:83
+[LOG] Clause compared: {clause_id: ee6962a6-776b-48f8-a529-2f6fbd673afb, comparison_type: modified, risk_level: Medium, changes: Array(2), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:121
+[LOG] Clause compared: {clause_id: cf0d8635-f770-4602-98e5-6ed577cebe1e, comparison_type: modified, risk_level: Low, changes: Array(4), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:121
+[LOG] Clause compared: {clause_id: 2b2b4bfc-6e55-4c8c-a4f2-a83166692e8c, comparison_type: modified, risk_level: Medium, changes: Array(3), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:121
+[LOG] Clause compared: {clause_id: 5f9db5dd-32c3-4cee-9041-b69ec8f515fb, comparison_type: missing, risk_level: High, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:121
+[LOG] Clause compared: {clause_id: cd281998-5cb9-40b9-a3d2-e393368b0a82, comparison_type: extra, risk_level: Medium, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:121
+[LOG] Clause compared: {clause_id: d0f9197d-6de4-48a9-9287-03f6995c1729, comparison_type: extra, risk_level: Medium, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:121
+[LOG] Clause compared: {clause_id: b34f8189-8d43-4482-94dd-ed3c276290a1, comparison_type: extra, risk_level: Medium, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:121
+[LOG] Clause compared: {clause_id: 91e309df-03ec-4f28-9a09-b40de791244b, comparison_type: extra, risk_level: Medium, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:121
+[LOG] Analysis complete: {session_id: 3ae48c1a-4afa-4bf8-a52b-a46913a2947b, overall_risk_score: 0.5, deviation_count: 8, summary: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769358282124:138
+[LOG] Using 14 progressive changes @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769358282124:15
+[LOG] Using 14 progressive changes @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769358282124:15
+[LOG] Applying highlights to document with 14 changes @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769358282124:59
+[LOG] Found 1 clause divs in document @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769358282124:61
+[LOG] Using text-search fallback for single-div document @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769358282124:63
+[WARNING] Could not find text for change c9244c4d-8d3e-46db-a10c-ae08049de270: "Payment shall be made within t..." @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769358282124:167
+[LOG] Found 0 mark elements @ :3
+[LOG] Found 0 elements with data-change-id @ :7
+[LOG] Container found: 91e309df-03ec-4f28-9a09-b40de791244b @ :12
+[LOG] Container text length: 2017 @ :13
+[LOG] Full document text (first 500 chars): NON-DISCLOSURE AGREEMENT This Non-Disclosure Agreement (the "Agreement") is entered into as of January 24, 2026, by and between ABC Corporation ("Disclosing Party") and XYZ Company ("Receiving Party"). 1. CONFIDENTIAL INFORMATION The Disclosing Party agrees to disclose certain confidential and proprietary information to the Receiving Party for the purpose of evaluating a potential business relationship. "Confidential Information" means all information disclosed by the Disclosing Party to the Rec @ :18
+[LOG] Search results: [Object, Object, Object, Object] @ :19
+[INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=919d6c6f:20102
+[LOG] 🚀 [RedliningMode] Starting file upload: test_contract_nda.txt Category: NDA @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:32
+[LOG] 📤 [RedliningMode] Uploading to /api/documents/upload... @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:36
+[LOG] ✅ [RedliningMode] Upload response status: 200 @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:41
+[LOG] 📦 [RedliningMode] Upload result: {success: true, message: Document uploaded successfully, details: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:43
+[LOG] 🆔 [RedliningMode] Document ID: 0ee446ea-a0b7-43ab-a1e7-75f5fcef6b87 @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:50
+[LOG] 🔄 [RedliningMode] Starting progressive redlining... @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:51
+[LOG] ✅ [RedliningMode] Session response status: 200 @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:57
+[LOG] 📊 [RedliningMode] Session result: {success: true, session_id: aa831fd7-4f85-4ae9-b2d8-8942cc29f166, status: processing, uploaded_document_id: 0ee446ea-a0b7-43ab-a1e7-75f5fcef6b87, template_id: bdaee6b1-c3b0-41e5-ba30-c499206b769f} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:59
+[LOG] 💾 [RedliningMode] Session data stored @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:65
+[LOG] 🎯 [RedliningMode] Moved to review step @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:66
+[LOG] 🌊 [RedliningMode] Connecting to SSE stream... @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:68
+[LOG] Connecting to SSE stream for session: aa831fd7-4f85-4ae9-b2d8-8942cc29f166 @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:83
+[LOG] Clause compared: {clause_id: a051a6b4-6100-402b-bd1a-df13efc6a6cd, comparison_type: modified, risk_level: Medium, changes: Array(3), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:121
+[LOG] Clause compared: {clause_id: 902b05cf-202b-428b-a3d7-243c8f4c15ed, comparison_type: modified, risk_level: Low, changes: Array(4), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:121
+[LOG] Clause compared: {clause_id: cea75eb6-b1a6-4b5f-8dee-7024b52955fa, comparison_type: modified, risk_level: Medium, changes: Array(3), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:121
+[LOG] Clause compared: {clause_id: 5f9db5dd-32c3-4cee-9041-b69ec8f515fb, comparison_type: missing, risk_level: High, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:121
+[LOG] Clause compared: {clause_id: bbba528e-eefa-4b07-a0f2-6e0e61b11ca8, comparison_type: extra, risk_level: Medium, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:121
+[LOG] Clause compared: {clause_id: 8eede442-a4e1-4bee-ab5c-300c3289f54b, comparison_type: extra, risk_level: Medium, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:121
+[LOG] Clause compared: {clause_id: e9016a11-d3b0-4b51-8106-e72fd9b3de4f, comparison_type: extra, risk_level: Medium, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:121
+[LOG] Clause compared: {clause_id: 7603217b-2b4d-4e7a-b684-280800e073a3, comparison_type: extra, risk_level: Medium, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:121
+[LOG] Analysis complete: {session_id: aa831fd7-4f85-4ae9-b2d8-8942cc29f166, overall_risk_score: 0.5, deviation_count: 8, summary: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359420097:138
+[LOG] Using 15 progressive changes @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359420097:15
+[LOG] Using 15 progressive changes @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359420097:15
+[LOG] Applying highlights to document with 15 changes @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359420097:59
+[LOG] Found 1 clause divs in document @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359420097:61
+[LOG] Using text-search fallback for single-div document @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359420097:63
+[WARNING] Could not find text for change 5196e3e8-2d33-4c26-847c-f94071fc932f (modification): "Confidential Information means..." @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359420097:168
+[WARNING] Could not find text for change 938e9a45-f959-4c1d-8295-ea6b0f5c4331 (modification): "The Receiving Party agrees to ..." @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359420097:168
+[WARNING] Could not find text for change f9a2b931-65aa-40eb-b4e9-97d24d66efc6 (extra_clause): "Payment shall be made within t..." @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359420097:168
+[LOG] Found 0 mark elements @ :3
+[LOG] AnnotationOverlay has 15 progressive changes @ :15
+[LOG] Change 0: {id: 5196e3e8-2d33-4c26-847c-f94071fc932f, type: modification, original_text: , suggested_text: Confidential Information means any and all technic} @ :19
+[LOG] Change 1: {id: 149046c4-4aee-41dc-8a70-6d2f1b0e2e25, type: deletion, original_text: , suggested_text: } @ :19
+[LOG] Change 2: {id: 938e9a45-f959-4c1d-8295-ea6b0f5c4331, type: modification, original_text: , suggested_text: The Receiving Party agrees to disclose certain con} @ :19
+[LOG] Found 0 annotation cards @ :9
+[LOG] Sections: [] @ :19
+[LOG] First 5 changes with user_action: [Object, Object, Object, Object, Object] @ :19
+[LOG] Changes by user_action: {pending: 0, accepted: 0, rejected: 0, undefined: 15, null: 0} @ :30
+[INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=919d6c6f:20102
+[LOG] 🚀 [RedliningMode] Starting file upload: test_contract_nda.txt Category: NDA @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:32
+[LOG] 📤 [RedliningMode] Uploading to /api/documents/upload... @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:36
+[LOG] ✅ [RedliningMode] Upload response status: 200 @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:41
+[LOG] 📦 [RedliningMode] Upload result: {success: true, message: Document uploaded successfully, details: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:43
+[LOG] 🆔 [RedliningMode] Document ID: 0ed4fb35-9ba1-4afc-8a66-4f3b6e657fca @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:50
+[LOG] 🔄 [RedliningMode] Starting progressive redlining... @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:51
+[LOG] ✅ [RedliningMode] Session response status: 200 @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:57
+[LOG] 📊 [RedliningMode] Session result: {success: true, session_id: 7eb62ff8-08ef-499f-b2d4-03dad7197df1, status: processing, uploaded_document_id: 0ed4fb35-9ba1-4afc-8a66-4f3b6e657fca, template_id: bdaee6b1-c3b0-41e5-ba30-c499206b769f} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:59
+[LOG] 💾 [RedliningMode] Session data stored @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:65
+[LOG] 🎯 [RedliningMode] Moved to review step @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:66
+[LOG] 🌊 [RedliningMode] Connecting to SSE stream... @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:68
+[LOG] Connecting to SSE stream for session: 7eb62ff8-08ef-499f-b2d4-03dad7197df1 @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:83
+[LOG] Clause compared: {clause_id: 510d5c22-1ea8-482a-8c83-9ed7bb916997, comparison_type: modified, risk_level: Low, changes: Array(2), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:121
+[LOG] Clause compared: {clause_id: 165734a9-70da-4986-9389-47a57e18db88, comparison_type: modified, risk_level: Low, changes: Array(3), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:121
+[LOG] Clause compared: {clause_id: 57f96127-5b22-4e69-9fc7-9167ef78fd99, comparison_type: modified, risk_level: Low, changes: Array(3), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:121
+[LOG] Clause compared: {clause_id: 5f9db5dd-32c3-4cee-9041-b69ec8f515fb, comparison_type: missing, risk_level: High, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:121
+[LOG] Clause compared: {clause_id: fff38bb2-a92a-4cb1-bda0-37031eb8ef22, comparison_type: extra, risk_level: Medium, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:121
+[LOG] Clause compared: {clause_id: eb787d10-2aa4-4e62-a13c-93e8980a2044, comparison_type: extra, risk_level: Medium, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:121
+[LOG] Clause compared: {clause_id: c61eec4b-f9f9-4142-bba4-19024f68c90a, comparison_type: extra, risk_level: Medium, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:121
+[LOG] Clause compared: {clause_id: 53fe6b25-0032-4612-a886-c8e09f2d8213, comparison_type: extra, risk_level: Medium, changes: Array(1), progress: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:121
+[LOG] Analysis complete: {session_id: 7eb62ff8-08ef-499f-b2d4-03dad7197df1, overall_risk_score: 0.42500000000000004, deviation_count: 8, summary: Object} @ http://localhost:5173/src/components/RedliningMode.jsx?t=1769359667070:138
+[LOG] Using 13 progressive changes @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359667070:19
+[LOG] Using 13 progressive changes @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359667070:19
+[LOG] Applying highlights to document with 13 changes @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359667070:63
+[LOG] Found 1 clause divs in document @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359667070:65
+[LOG] Using text-search fallback for single-div document @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359667070:67
+[LOG] Skipping change 6da732da-53dc-4c2f-a20a-d1d9ac2faf5c - no original_text to highlight @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359667070:74
+[LOG] Skipping change 88903e81-0f7c-4458-9c1c-449198c6d0f6 - no original_text to highlight @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359667070:74
+[LOG] Skipping change b7f4213e-f896-4db7-a29c-7bd3c6cf781e - no original_text to highlight @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359667070:74
+[LOG] Skipping change 7a09602e-7700-418b-a54c-11dae0c00265 - no original_text to highlight @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359667070:74
+[LOG] Skipping change ef480dad-f3a8-4930-9bc8-d4a4afd4638b - no original_text to highlight @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359667070:74
+[LOG] Skipping change 4901fdb5-7944-4b43-a3d3-80f43ec093a1 - no original_text to highlight @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359667070:74
+[WARNING] Could not find text for change ecf90787-9305-41d3-b2bc-8ab50822ef2a (extra_clause): "Payment shall be made within t..." @ http://localhost:5173/src/components/AnnotationOverlay.jsx?t=1769359667070:176
+[LOG] Found 0 mark elements @ :3
