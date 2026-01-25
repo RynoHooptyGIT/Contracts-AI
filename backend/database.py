@@ -160,7 +160,7 @@ def migrate_redlining_tables():
         CREATE TABLE IF NOT EXISTS redlining_sessions (
             id TEXT PRIMARY KEY,
             uploaded_document_id TEXT NOT NULL,
-            template_id TEXT NOT NULL,
+            template_id TEXT,
             template_match_score REAL,
             category TEXT,
             status TEXT DEFAULT 'pending',

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './RedliningMode.css';
 import AnnotatedDocumentPanel from './AnnotatedDocumentPanel';
 import RedliningChat from './RedliningChat';
+import ProgressModal from './ProgressModal';
 
 /**
  * RedliningMode - Main container for contract redlining workflow
@@ -28,6 +29,11 @@ const RedliningMode = ({ onExit }) => {
   const [eventSource, setEventSource] = useState(null);
   const [highlightedClauseId, setHighlightedClauseId] = useState(null);
 
+  // Progress modal state
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [processingStage, setProcessingStage] = useState('idle');
+  const [processingError, setProcessingError] = useState(null);
+
   const steps = [
     { id: 'upload', label: 'Upload Contract', icon: '📤' },
     { id: 'review', label: 'Review', icon: '🔍' }
@@ -35,6 +41,11 @@ const RedliningMode = ({ onExit }) => {
 
   const handleFileUpload = async (file, category) => {
     try {
+      // Show progress modal and set initial stage
+      setShowProgressModal(true);
+      setProcessingStage('uploading');
+      setProcessingError(null);
+
       console.log('🚀 [RedliningMode] Starting file upload:', file.name, 'Category:', category);
 
       // Step 1: Upload document
@@ -51,6 +62,9 @@ const RedliningMode = ({ onExit }) => {
       console.log('✅ [RedliningMode] Upload response status:', uploadResponse.status);
       const uploadResult = await uploadResponse.json();
       console.log('📦 [RedliningMode] Upload result:', uploadResult);
+
+      // Transition to matching stage
+      setProcessingStage('matching');
 
       if (!uploadResult.success || !uploadResult.details || !uploadResult.details.documents || uploadResult.details.documents.length === 0) {
         console.error('❌ [RedliningMode] Upload validation failed:', uploadResult);
@@ -76,29 +90,37 @@ const RedliningMode = ({ onExit }) => {
         throw new Error(sessionResult.detail || 'Failed to start progressive redlining');
       }
 
+      // Transition to connecting stage
+      setProcessingStage('connecting');
+
       // Store session data
       setSessionData(sessionResult);
       console.log('💾 [RedliningMode] Session data stored');
 
-      // Move directly to review screen
-      setCurrentStep('review');
+      // DO NOT move to review screen yet - will transition after analysis complete
+      // setCurrentStep('review'); // COMMENTED OUT - transition happens in handleAnalysisComplete
       console.log('🎯 [RedliningMode] Moved to review step');
 
       // Step 3: Connect to SSE stream for progressive updates
       if (sessionResult.status === 'processing') {
         console.log('🌊 [RedliningMode] Connecting to SSE stream...');
         connectToProgressStream(sessionResult.session_id);
+
+        // Transition to analyzing stage
+        setProcessingStage('analyzing');
       } else {
         // No template found or other issue
         setAnalysisComplete(true);
-        alert(sessionResult.message || 'No template found for comparison');
+        const errorMsg = sessionResult.message || 'No matching golden template found';
+        setProcessingError(`${errorMsg}. We don't have a ${category} template in our golden templates database yet.`);
       }
 
     } catch (error) {
       console.error('❌ [RedliningMode] Error:', error);
       console.error('❌ [RedliningMode] Error stack:', error.stack);
-      alert(`Error: ${error.message}`);
-      setCurrentStep('upload');
+      setProcessingError(error.message || 'Failed to process document');
+      setProcessingStage('idle');
+      // Modal will stay open showing error state with retry/cancel options
     }
   };
 
@@ -177,6 +199,31 @@ const RedliningMode = ({ onExit }) => {
     console.log('Analysis complete:', data);
     setAnalysisComplete(true);
     setFinalSummary(data);
+
+    // Transition to complete stage
+    setProcessingStage('complete');
+
+    // Auto-dismiss modal after 2 seconds and transition to review screen
+    setTimeout(() => {
+      setShowProgressModal(false);
+      setCurrentStep('review'); // NOW we transition to review screen
+      setProcessingStage('idle');
+    }, 2000);
+  };
+
+  const handleRetryUpload = () => {
+    setShowProgressModal(false);
+    setProcessingError(null);
+    setProcessingStage('idle');
+    // User can re-upload from upload screen
+  };
+
+  const handleCancelUpload = () => {
+    setShowProgressModal(false);
+    setProcessingError(null);
+    setProcessingStage('idle');
+    setCurrentStep('upload');
+    // Close modal and reset to upload screen
   };
 
   // Cleanup EventSource on unmount
@@ -431,6 +478,17 @@ const RedliningMode = ({ onExit }) => {
 
   return (
     <div className="redlining-mode">
+      {/* Progress Modal - Shows during document processing */}
+      <ProgressModal
+        isOpen={showProgressModal}
+        stage={processingStage}
+        progress={progress}
+        summary={summary}
+        error={processingError}
+        onRetry={handleRetryUpload}
+        onCancel={handleCancelUpload}
+      />
+
       <div className="redlining-header">
         <button className="exit-button" onClick={onExit} title="Exit Redlining Mode">
           ✕

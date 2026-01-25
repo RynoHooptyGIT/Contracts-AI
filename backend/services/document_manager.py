@@ -81,6 +81,9 @@ class DocumentManager:
         # Store vectors in FAISS
         embedding_ids = self.vector_store.add_vectors(embeddings)
 
+        # IMPORTANT: Save FAISS index to disk after adding vectors
+        self.vector_store.save()
+
         # Store metadata in SQLite
         doc_id = str(uuid.uuid4())
         conn = self._get_connection()

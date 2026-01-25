@@ -1,0 +1,33 @@
+NON-DISCLOSURE AGREEMENT
+
+This Non-Disclosure Agreement (the "Agreement") is entered into as of January 24, 2026, by and between ABC Corporation ("Disclosing Party") and XYZ Company ("Receiving Party").
+
+1. CONFIDENTIAL INFORMATION
+The Disclosing Party agrees to disclose certain confidential and proprietary information to the Receiving Party for the purpose of evaluating a potential business relationship. "Confidential Information" means all information disclosed by the Disclosing Party to the Receiving Party, whether orally or in writing.
+
+2. OBLIGATIONS OF RECEIVING PARTY
+The Receiving Party agrees to:
+(a) Hold all Confidential Information in strict confidence;
+(b) Not disclose Confidential Information to any third parties without prior written consent;
+(c) Use Confidential Information solely for the purpose of evaluating the business relationship;
+(d) Protect Confidential Information with the same degree of care used to protect its own confidential information.
+
+3. TERM
+This Agreement shall remain in effect for a period of two (2) years from the date of execution. The obligations regarding Confidential Information shall survive termination of this Agreement for a period of five (5) years.
+
+4. RETURN OF MATERIALS
+Upon request or termination of this Agreement, the Receiving Party shall promptly return or destroy all Confidential Information and certify such destruction in writing.
+
+5. NO LICENSE
+Nothing in this Agreement grants any license or right to the Receiving Party under any patent, copyright, trade secret, or other intellectual property right.
+
+6. GOVERNING LAW
+This Agreement shall be governed by and construed in accordance with the laws of the State of California, without regard to its conflict of law provisions.
+
+IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.
+
+ABC Corporation                    XYZ Company
+By: ________________               By: ________________
+Name: John Smith                   Name: Jane Doe
+Title: CEO                         Title: President
+Date: January 24, 2026            Date: January 24, 2026

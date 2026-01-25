@@ -183,9 +183,11 @@ async def startup_event():
 
     # Initialize progressive redlining service if available
     if PROGRESSIVE_REDLINING_AVAILABLE:
-        log_info("Initializing progressive redlining service...", "STARTUP")
-        app.state.progressive_redlining_service = ProgressiveRedliningService()
-        log_success("Progressive redlining service ready", "STARTUP")
+        log_info("Initializing progressive redlining service with RAG support...", "STARTUP")
+        app.state.progressive_redlining_service = ProgressiveRedliningService(
+            doc_manager=app.state.doc_manager  # Pass doc_manager for RAG-enhanced analysis
+        )
+        log_success("Progressive redlining service ready (RAG enabled)", "STARTUP")
 
 @app.get("/")
 async def root():

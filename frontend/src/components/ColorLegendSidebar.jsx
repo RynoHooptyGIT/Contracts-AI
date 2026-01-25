@@ -2,12 +2,18 @@ import { useState, useEffect } from 'react';
 import './ColorLegendSidebar.css';
 
 /**
- * ColorLegendSidebar - Fixed sidebar showing color meanings, progress, and live stats
+ * ColorLegendSidebar - Fixed sidebar showing color meanings, review progress, and live stats
  * Replaces the bottom ProgressiveSummaryPanel to maximize document viewing area
  */
-const ColorLegendSidebar = ({ progress, summary, finalSummary, analysisComplete }) => {
-  const progressPercent = progress.total > 0
-    ? Math.round((progress.current / progress.total) * 100)
+const ColorLegendSidebar = ({ progress, summary, finalSummary, analysisComplete, progressiveChanges = [] }) => {
+  // Calculate review progress counts from progressiveChanges
+  // Default user_action to 'pending' if not set
+  const pendingCount = progressiveChanges.filter(c => (c.user_action || 'pending') === 'pending').length;
+  const acceptedCount = progressiveChanges.filter(c => c.user_action === 'accepted').length;
+  const rejectedCount = progressiveChanges.filter(c => c.user_action === 'rejected').length;
+
+  const progressPercent = progressiveChanges.length > 0
+    ? Math.round(((acceptedCount + rejectedCount) / progressiveChanges.length) * 100)
     : 0;
 
   const getRiskLevel = (score) => {
@@ -26,15 +32,42 @@ const ColorLegendSidebar = ({ progress, summary, finalSummary, analysisComplete 
 
   return (
     <div className="color-legend-sidebar">
+      {/* Review Progress - Moved to Top */}
+      <div className="legend-review-progress">
+        <h4>Review Progress</h4>
+        <div className="review-stats">
+          <div className="review-stat pending">
+            <span className="review-count">{pendingCount}</span>
+            <span className="review-label">Pending</span>
+          </div>
+          <div className="review-stat accepted">
+            <span className="review-count">{acceptedCount}</span>
+            <span className="review-label">Accepted</span>
+          </div>
+          <div className="review-stat rejected">
+            <span className="review-count">{rejectedCount}</span>
+            <span className="review-label">Rejected</span>
+          </div>
+        </div>
+        <div className="progress-bar-container">
+          <div
+            className="progress-bar-fill"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="legend-divider"></div>
+
+      {/* Color Legend - Moved Below Progress with Expanded Text */}
       <h3>📊 Color Legend</h3>
 
-      {/* Color Meanings */}
       <div className="legend-items">
         <div className="legend-item">
           <div className="legend-color green"></div>
           <div className="legend-text">
             <strong>Matched</strong>
-            <span>Exact match</span>
+            <span>Clause matches template exactly with no changes</span>
           </div>
         </div>
 
@@ -42,7 +75,7 @@ const ColorLegendSidebar = ({ progress, summary, finalSummary, analysisComplete 
           <div className="legend-color yellow"></div>
           <div className="legend-text">
             <strong>Modified</strong>
-            <span>Minor changes</span>
+            <span>Clause has minor wording or formatting differences</span>
           </div>
         </div>
 
@@ -50,7 +83,7 @@ const ColorLegendSidebar = ({ progress, summary, finalSummary, analysisComplete 
           <div className="legend-color red"></div>
           <div className="legend-text">
             <strong>Critical</strong>
-            <span>Major deviation</span>
+            <span>Significant deviations that may affect legal protection</span>
           </div>
         </div>
 
@@ -58,7 +91,7 @@ const ColorLegendSidebar = ({ progress, summary, finalSummary, analysisComplete 
           <div className="legend-color blue"></div>
           <div className="legend-text">
             <strong>Missing</strong>
-            <span>Not in document</span>
+            <span>Required template clause not found in your contract</span>
           </div>
         </div>
 
@@ -66,27 +99,8 @@ const ColorLegendSidebar = ({ progress, summary, finalSummary, analysisComplete 
           <div className="legend-color purple"></div>
           <div className="legend-text">
             <strong>Extra</strong>
-            <span>Not in template</span>
+            <span>Additional clause found only in your contract</span>
           </div>
-        </div>
-      </div>
-
-      <div className="legend-divider"></div>
-
-      {/* Progress Bar */}
-      <div className="legend-progress">
-        <h4>Progress</h4>
-        <div className="progress-text">
-          {analysisComplete
-            ? '✅ Complete'
-            : `${progress.current}/${progress.total} clauses`
-          }
-        </div>
-        <div className="progress-bar-container">
-          <div
-            className="progress-bar-fill"
-            style={{ width: `${progressPercent}%` }}
-          />
         </div>
       </div>
 

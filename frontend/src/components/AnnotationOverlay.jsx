@@ -14,8 +14,13 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
 
   // Progressive mode: Use changes from props
   useEffect(() => {
-    if (progressiveChanges && progressiveChanges.length > 0) {
-      setChanges(progressiveChanges);
+    if (progressiveChanges) {
+      // Ensure all changes have user_action field (default to 'pending' if missing)
+      const changesWithAction = progressiveChanges.map(change => ({
+        ...change,
+        user_action: change.user_action || 'pending'
+      }));
+      setChanges(changesWithAction);
       setLoading(false);
       console.log(`Using ${progressiveChanges.length} progressive changes`);
     }
@@ -80,32 +85,89 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
   const applyHighlightsToDocument = (container, changes) => {
     console.log('Applying highlights to document with', changes.length, 'changes');
 
-    // Group changes by clause ID for efficient processing
-    const changesByClause = {};
-    changes.forEach(change => {
-      const clauseId = change.new_clause_id || change.template_clause_id;
-      if (clauseId) {
-        if (!changesByClause[clauseId]) {
-          changesByClause[clauseId] = [];
+    // Check if document has proper clause divs or if it's a single-div document
+    const clauseDivs = container.querySelectorAll('[data-clause-id]');
+    console.log(`Found ${clauseDivs.length} clause divs in document`);
+
+    if (clauseDivs.length === 1) {
+      // Fallback: Single div document - highlight based on text search
+      console.log('Using text-search fallback for single-div document');
+      const docDiv = clauseDivs[0];
+
+      // Collect all highlight ranges first
+      const highlightRanges = [];
+
+      changes.forEach(change => {
+        // Skip changes that don't exist in the uploaded document:
+        // - missing_clause: not in uploaded doc
+        // - deletion: template text that's missing from uploaded doc
+        // - modification/addition: only highlight if original_text exists
+        if (change.change_type === 'missing_clause' || change.change_type === 'deletion') {
+          return;
         }
-        changesByClause[clauseId].push(change);
-      }
-    });
 
-    // Apply highlights to each clause
-    Object.entries(changesByClause).forEach(([clauseId, clauseChanges]) => {
-      const clauseElement = container.querySelector(`[data-clause-id="${clauseId}"]`);
+        // Only highlight if there's text from the uploaded document
+        if (!change.original_text || change.original_text.length === 0) {
+          console.log(`Skipping change ${change.id} - no original_text to highlight`);
+          return;
+        }
 
-      if (!clauseElement) {
-        console.warn(`Clause element not found for clause ID: ${clauseId}`);
-        return;
-      }
+        // Find the text position
+        const fullText = docDiv.textContent;
+        const searchSnippet = change.original_text.substring(0, Math.min(100, change.original_text.length));
+        const searchIndex = fullText.indexOf(searchSnippet);
 
-      // Apply highlights for each change in this clause
-      clauseChanges.forEach(change => {
-        highlightTextInElement(clauseElement, change);
+        if (searchIndex !== -1) {
+          const actualLength = Math.min(change.original_text.length, fullText.length - searchIndex);
+          highlightRanges.push({
+            id: change.id,
+            start_offset: searchIndex,
+            end_offset: searchIndex + actualLength,
+            risk_level: change.risk_level,
+            change_type: change.change_type
+          });
+          console.log(`✅ Found range for ${change.id} at ${searchIndex}-${searchIndex + actualLength}`);
+        } else {
+          console.warn(`Could not find text for change ${change.id} (${change.change_type})`);
+        }
       });
-    });
+
+      // Sort ranges by start position (descending) so we process from end to start
+      // This prevents offset shifts as we modify the DOM
+      highlightRanges.sort((a, b) => b.start_offset - a.start_offset);
+
+      console.log(`📍 Applying ${highlightRanges.length} highlights in reverse order`);
+
+      // Apply highlights from end to start
+      highlightRanges.forEach(range => {
+        highlightTextInElement(docDiv, range);
+      });
+    } else {
+      // Standard path: Multi-div document with clause separation
+      const changesByClause = {};
+      changes.forEach(change => {
+        const clauseId = change.new_clause_id || change.template_clause_id;
+        if (clauseId) {
+          if (!changesByClause[clauseId]) {
+            changesByClause[clauseId] = [];
+          }
+          changesByClause[clauseId].push(change);
+        }
+      });
+
+      Object.entries(changesByClause).forEach(([clauseId, clauseChanges]) => {
+        const clauseElement = container.querySelector(`[data-clause-id="${clauseId}"]`);
+
+        if (!clauseElement) {
+          console.warn(`Clause element not found for clause ID: ${clauseId}`);
+          return;
+        }
+
+        clauseChanges.forEach(change => {
+          highlightTextInElement(clauseElement, change);
+        });
+      });
+    }
   };
 
   /**
@@ -115,13 +177,17 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
   const highlightTextInElement = (element, change) => {
     const { id, start_offset, end_offset, risk_level, change_type } = change;
 
+    console.log(`🔍 highlightTextInElement called for ${id}: offsets ${start_offset}-${end_offset}, type=${change_type}`);
+
     // Skip if no valid offsets
     if (start_offset === 0 && end_offset === 0 && change_type !== 'missing_clause') {
+      console.log(`⏭️  Skipping ${id} - invalid offsets`);
       return;
     }
 
     // Get all text nodes within the element
     const textNodes = getTextNodes(element);
+    console.log(`📝 Found ${textNodes.length} text nodes for highlighting`);
 
     let currentOffset = 0;
     textNodes.forEach(node => {
@@ -174,6 +240,8 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
    * Wrap a portion of text in a node with a <mark> element
    */
   const wrapTextInNode = (textNode, start, end, changeId, riskLevel, changeType) => {
+    console.log(`🎨 wrapTextInNode: ${changeId} at ${start}-${end}, text="${textNode.textContent.substring(start, end).substring(0, 30)}..."`);
+
     const text = textNode.textContent;
     const beforeText = text.slice(0, start);
     const highlightText = text.slice(start, end);
@@ -184,6 +252,8 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
     mark.className = `annotation-highlight risk-${riskLevel.toLowerCase()} type-${changeType}`;
     mark.dataset.changeId = changeId;
     mark.textContent = highlightText;
+
+    console.log(`✨ Created mark element with class="${mark.className}", text="${highlightText.substring(0, 30)}..."`);
 
     // Add click handler
     mark.addEventListener('click', () => {
@@ -205,6 +275,47 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
     }
 
     textNode.parentNode.replaceChild(fragment, textNode);
+    console.log(`✅ DOM updated: replaced text node with fragment containing mark`);
+  };
+
+  /**
+   * Highlight text by searching for it in the element (fallback for single-div documents)
+   */
+  const highlightByTextSearch = (element, change) => {
+    const { id, original_text, suggested_text, risk_level, change_type } = change;
+
+    // For extra_clause: use original_text (text that exists in uploaded doc)
+    // For modification/missing_clause: use suggested_text (but it won't be found in uploaded doc - skip)
+    const searchText = original_text || suggested_text;
+    if (!searchText || searchText.length < 5) {
+      return; // Too short to reliably search or no text available
+    }
+
+    // Get the full text content
+    const fullText = element.textContent;
+
+    // Search for the first 100 chars to find the position
+    const searchSnippet = searchText.substring(0, Math.min(100, searchText.length));
+    const searchIndex = fullText.indexOf(searchSnippet);
+
+    if (searchIndex === -1) {
+      console.warn(`Could not find text for change ${id} (${change_type}): "${searchText.substring(0, 30)}..."`);
+      return;
+    }
+
+    // Calculate the actual end position based on full text length
+    const actualLength = Math.min(searchText.length, fullText.length - searchIndex);
+
+    console.log(`✅ Highlighting change ${id} at offset ${searchIndex}-${searchIndex + actualLength}`);
+
+    // Find the exact text nodes at this position
+    highlightTextInElement(element, {
+      id,
+      start_offset: searchIndex,
+      end_offset: searchIndex + actualLength,
+      risk_level,
+      change_type
+    });
   };
 
   /**
@@ -303,39 +414,18 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
   if (changes.length === 0) {
     return (
       <div className="annotation-overlay empty">
-        <p>No annotations found for this session</p>
+        <div className="success-message">
+          <div className="success-icon">✅</div>
+          <h3>Perfect Match!</h3>
+          <p>All clauses matched the golden template exactly. No changes needed.</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="annotation-overlay">
-      {/* Progress Summary */}
-      <div className="annotation-summary">
-        <h3>Review Progress</h3>
-        <div className="progress-stats">
-          <div className="stat pending">
-            <span className="stat-count">{pendingCount}</span>
-            <span className="stat-label">Pending</span>
-          </div>
-          <div className="stat accepted">
-            <span className="stat-count">{acceptedCount}</span>
-            <span className="stat-label">Accepted</span>
-          </div>
-          <div className="stat rejected">
-            <span className="stat-count">{rejectedCount}</span>
-            <span className="stat-label">Rejected</span>
-          </div>
-        </div>
-        <div className="progress-bar">
-          <div
-            className="progress-fill"
-            style={{ width: `${((acceptedCount + rejectedCount) / changes.length) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Annotation Cards */}
+      {/* Annotation Cards - Review Progress moved to ColorLegendSidebar */}
       <div className="annotation-cards-container">
         {/* High Risk Changes */}
         {changesByRisk.High.length > 0 && (

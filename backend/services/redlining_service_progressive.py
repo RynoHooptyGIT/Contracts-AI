@@ -18,7 +18,7 @@ from .embedding_service import EmbeddingService
 import numpy as np
 
 
-# LLM Prompts (same as comparison_engine.py)
+# LLM Prompts (enhanced with RAG support)
 DEVIATION_ANALYSIS_PROMPT = '''You are a legal contract analyzer. Compare these two contract clauses and identify all differences.
 
 GOLDEN TEMPLATE CLAUSE (Standard):
@@ -30,6 +30,8 @@ NEW CONTRACT CLAUSE:
 Title: {new_title}
 Type: {new_type}
 Text: {new_text}
+
+{rag_context}
 
 Analyze and identify:
 1. Material differences (changes that affect legal rights/obligations)
@@ -43,6 +45,7 @@ Consider:
 - Are financial terms less favorable?
 - Are timeframes extended in a risky way?
 - Are obligations vague or unclear?
+- How does this clause compare to the similar examples above (if provided)?
 
 Respond ONLY in valid JSON format with no additional text:
 {{
@@ -112,7 +115,7 @@ class ProgressiveRedliningService:
     real-time document annotation as analysis progresses.
     """
 
-    def __init__(self):
+    def __init__(self, doc_manager=None):
         # Database path from environment
         db_path = os.getenv("DATABASE_PATH", "/app/data/documents.db")
         self.db_path = db_path
@@ -128,6 +131,10 @@ class ProgressiveRedliningService:
         self.template_matcher = TemplateMatcher()
         self.clause_extractor = ClauseExtractor()
         self.embedding_service = EmbeddingService()
+
+        # RAG support - document manager for semantic search
+        self.doc_manager = doc_manager
+        self.use_rag = doc_manager is not None
 
     def _get_connection(self):
         """Get SQLite database connection"""
@@ -306,13 +313,16 @@ class ProgressiveRedliningService:
 
                 await asyncio.sleep(0.1)  # Small delay for smooth streaming
 
-            # Process modified clauses (with LLM-powered deviation analysis)
+            # Process modified clauses (with LLM-powered deviation analysis + RAG)
             for new_clause, template_clause, similarity in clause_pairs["modified"]:
                 current += 1
 
                 try:
-                    # Analyze deviations using async LLM call
-                    deviation = await self._analyze_deviation_async(new_clause, template_clause)
+                    # Get RAG context for better analysis
+                    rag_context = self._get_rag_context_for_clause(new_clause, top_k=2)
+
+                    # Analyze deviations using async LLM call with RAG context
+                    deviation = await self._analyze_deviation_async(new_clause, template_clause, rag_context)
                     risk_level = deviation.get("risk_level", "Medium")
                     deviation_summary = deviation.get("summary", "")
 
@@ -400,10 +410,20 @@ class ProgressiveRedliningService:
 
                 await asyncio.sleep(0.1)
 
-            # Process extra clauses
+            # Process extra clauses (with RAG context to assess if they're standard)
             for new_clause in clause_pairs["extra"]:
                 current += 1
-                risk_level = "Medium"  # Extra clauses are medium risk
+
+                # Use RAG to find similar clauses from other documents
+                rag_context = self._get_rag_context_for_clause(new_clause, top_k=3)
+
+                # Assess risk level using RAG context
+                risk_level = "Medium"  # Default
+                rationale = f"This {new_clause['type']} clause does not appear in the template."
+
+                if rag_context:
+                    # If we found similar clauses in other documents, this might be standard
+                    rationale += " However, similar clauses were found in other contracts (see analysis)."
 
                 # Store clause comparison
                 comparison_id = self._store_clause_comparison(
@@ -411,7 +431,7 @@ class ProgressiveRedliningService:
                     "extra", 0.0, risk_level, "Extra clause not in template"
                 )
 
-                # Create single change for extra clause
+                # Create single change for extra clause with RAG insight
                 changes = [{
                     "change_type": "extra_clause",
                     "original_text": new_clause["text"],
@@ -419,7 +439,8 @@ class ProgressiveRedliningService:
                     "start_offset": 0,
                     "end_offset": len(new_clause["text"]),
                     "risk_level": risk_level,
-                    "rationale": f"This {new_clause['type']} clause does not appear in the template."
+                    "rationale": rationale,
+                    "rag_context": rag_context[:500] if rag_context else None  # Include snippet for reference
                 }]
                 stored_changes = self._store_individual_changes(comparison_id, changes)
 
@@ -794,11 +815,58 @@ class ProgressiveRedliningService:
 
         return best_match, best_similarity
 
+    # ========== RAG Helper Methods ==========
+
+    def _get_rag_context_for_clause(self, clause: Dict, top_k: int = 3) -> str:
+        """
+        Search the vector store for similar clauses to provide context
+
+        Args:
+            clause: The clause to find similar examples for
+            top_k: Number of similar clauses to retrieve
+
+        Returns:
+            Formatted string with similar clause examples from other documents
+        """
+        if not self.use_rag:
+            return ""
+
+        try:
+            # Create query from clause title and text
+            query = f"{clause['title']}: {clause['text'][:300]}"
+
+            # Search for similar clauses
+            similar_chunks = self.doc_manager.search_documents(query, top_k=top_k)
+
+            if not similar_chunks:
+                return ""
+
+            # Format the context
+            context_parts = []
+            for i, chunk in enumerate(similar_chunks, 1):
+                context_parts.append(
+                    f"Example {i} (from {chunk['filename']}):\n{chunk['text']}"
+                )
+
+            rag_context = "\n\n".join(context_parts)
+            log_info(f"Found {len(similar_chunks)} similar clauses for RAG context", "PROGRESSIVE_REDLINING")
+
+            return rag_context
+
+        except Exception as e:
+            log_warning(f"Failed to get RAG context: {str(e)}", "PROGRESSIVE_REDLINING")
+            return ""
+
     # ========== Async LLM Methods ==========
 
-    async def _analyze_deviation_async(self, new_clause: Dict, template_clause: Dict) -> Dict:
-        """Use LLM to analyze deviation between two clauses (async version)"""
+    async def _analyze_deviation_async(self, new_clause: Dict, template_clause: Dict, rag_context: str = "") -> Dict:
+        """Use LLM to analyze deviation between two clauses (async version with optional RAG context)"""
         log_info(f"Analyzing deviation for clause: {new_clause['title']}", "PROGRESSIVE_REDLINING")
+
+        # Format RAG context section
+        rag_section = ""
+        if rag_context:
+            rag_section = f"\nSIMILAR CLAUSES FROM OTHER CONTRACTS (for reference):\n{rag_context}\n"
 
         prompt = DEVIATION_ANALYSIS_PROMPT.format(
             template_title=template_clause["title"],
@@ -806,7 +874,8 @@ class ProgressiveRedliningService:
             template_text=template_clause["text"],
             new_title=new_clause["title"],
             new_type=new_clause["type"],
-            new_text=new_clause["text"]
+            new_text=new_clause["text"],
+            rag_context=rag_section
         )
 
         try:

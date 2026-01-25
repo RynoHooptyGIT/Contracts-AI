@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import DOMPurify from 'dompurify'; // XSS protection
 import AnnotationOverlay from './AnnotationOverlay';
 import ColorLegendSidebar from './ColorLegendSidebar';
@@ -57,9 +57,13 @@ export default function AnnotatedDocumentViewer({
         const sanitizedHTML = DOMPurify.sanitize(data.html_content, {
           ALLOWED_TAGS: [
             'p', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'br',
-            'strong', 'em', 'u', 'ol', 'ul', 'li', 'table', 'tr', 'td', 'th'
+            'strong', 'em', 'u', 'ol', 'ul', 'li', 'table', 'tr', 'td', 'th',
+            'mark'  // Allow mark tags for highlighting annotations
           ],
-          ALLOWED_ATTR: ['class', 'data-clause-id', 'data-clause-type', 'data-clause-index']
+          ALLOWED_ATTR: [
+            'class', 'data-clause-id', 'data-clause-type', 'data-clause-index',
+            'data-change-id'  // Allow data-change-id for annotation marks
+          ]
         });
 
         setHtmlContent(sanitizedHTML);
@@ -100,6 +104,19 @@ export default function AnnotatedDocumentViewer({
     }
   }, [highlightedClauseId]);
 
+  // Set innerHTML ONCE when HTML content loads, then never touch it again with React
+  // This allows AnnotationOverlay to manually modify the DOM without React resetting it
+  // SECURITY: htmlContent is already sanitized with DOMPurify on lines 57-67
+  useEffect(() => {
+    if (docContainerRef.current && htmlContent) {
+      // Only set innerHTML if it hasn't been set yet or if the HTML actually changed
+      if (docContainerRef.current.innerHTML !== htmlContent) {
+        docContainerRef.current.innerHTML = htmlContent;
+        console.log('📄 Set document HTML content (will not be reset by React)');
+      }
+    }
+  }, [htmlContent]);
+
   if (loading) {
     return (
       <div className="annotated-document-viewer">
@@ -123,11 +140,9 @@ export default function AnnotatedDocumentViewer({
     );
   }
 
-  // htmlContent is already sanitized with DOMPurify before being set in state
-  // This is safe to render
-  const renderSanitizedHTML = () => {
-    return { __html: htmlContent };
-  };
+  // NOTE: We no longer use dangerouslySetInnerHTML in the render.
+  // Instead, we manually set innerHTML via useEffect (line 110-118) to prevent
+  // React from resetting the DOM when AnnotationOverlay adds <mark> elements.
 
   return (
     <div className="annotated-document-viewer">
@@ -136,11 +151,12 @@ export default function AnnotatedDocumentViewer({
         {/* Inject document-specific CSS */}
         {cssContent && <style>{cssContent}</style>}
 
-        {/* Render HTML that was sanitized on lines 50-58 with DOMPurify */}
+        {/* Document container - innerHTML is set manually via useEffect (line 110-118) */}
+        {/* This prevents React from resetting the DOM when AnnotationOverlay adds highlights */}
         <div
           ref={docContainerRef}
           className="rendered-document"
-          dangerouslySetInnerHTML={renderSanitizedHTML()}
+          suppressHydrationWarning
         />
       </div>
 
@@ -150,6 +166,7 @@ export default function AnnotatedDocumentViewer({
         summary={summary}
         finalSummary={finalSummary}
         analysisComplete={analysisComplete}
+        progressiveChanges={progressiveChanges}
       />
 
       {/* Annotation Overlay - Visual annotations with accept/reject */}
