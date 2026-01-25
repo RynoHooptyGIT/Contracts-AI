@@ -5,9 +5,8 @@ import './AnnotationCard.css';
  * AnnotationCard - Display individual change with accept/reject actions
  * Shows change type, risk level, original/suggested text, and rationale
  */
-const AnnotationCard = ({ change, isSelected, onAccept, onReject }) => {
+const AnnotationCard = ({ change, isSelected, onAccept, onReject, onUndo }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [userAction, setUserAction] = useState(change.user_action);
 
   const {
     id,
@@ -17,17 +16,22 @@ const AnnotationCard = ({ change, isSelected, onAccept, onReject }) => {
     risk_level,
     rationale,
     start_offset,
-    end_offset
+    end_offset,
+    user_action  // Use from props instead of local state
   } = change;
 
   const handleAccept = () => {
-    setUserAction('accepted');
     onAccept();
   };
 
   const handleReject = () => {
-    setUserAction('rejected');
     onReject();
+  };
+
+  const handleUndo = () => {
+    if (onUndo) {
+      onUndo();
+    }
   };
 
   const getChangeTypeIcon = (type) => {
@@ -62,7 +66,7 @@ const AnnotationCard = ({ change, isSelected, onAccept, onReject }) => {
   };
 
   // Card status styling
-  const cardStatusClass = userAction !== 'pending' ? `action-${userAction}` : '';
+  const cardStatusClass = user_action !== 'pending' ? `action-${user_action}` : '';
   const selectedClass = isSelected ? 'selected' : '';
 
   return (
@@ -80,9 +84,9 @@ const AnnotationCard = ({ change, isSelected, onAccept, onReject }) => {
           </span>
         </div>
         <div className="card-header-right">
-          {userAction !== 'pending' && (
-            <span className={`action-badge ${userAction}`}>
-              {userAction === 'accepted' ? '✓ Accepted' : '✗ Rejected'}
+          {user_action !== 'pending' && (
+            <span className={`action-badge ${user_action}`}>
+              {user_action === 'accepted' ? '✓ Accepted' : '✗ Rejected'}
             </span>
           )}
         </div>
@@ -161,7 +165,7 @@ const AnnotationCard = ({ change, isSelected, onAccept, onReject }) => {
       </div>
 
       {/* Actions */}
-      {userAction === 'pending' && (
+      {user_action === 'pending' && (
         <div className="card-actions">
           <button
             className="btn-accept"
@@ -181,11 +185,11 @@ const AnnotationCard = ({ change, isSelected, onAccept, onReject }) => {
       )}
 
       {/* Already actioned - show undo option */}
-      {userAction !== 'pending' && (
+      {user_action !== 'pending' && (
         <div className="card-actions">
           <button
             className="btn-undo"
-            onClick={() => setUserAction('pending')}
+            onClick={handleUndo}
             title="Undo this action"
           >
             ↺ Undo

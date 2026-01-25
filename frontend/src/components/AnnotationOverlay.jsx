@@ -148,6 +148,9 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
       highlightRanges.forEach(range => {
         highlightTextInElement(docDiv, range);
       });
+
+      // Add placeholders for MISSING clauses at the end
+      addMissingClausePlaceholders(docDiv, changes);
     } else {
       // Standard path: Multi-div document with clause separation
       const changesByClause = {};
@@ -173,6 +176,101 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
           highlightTextInElement(clauseElement, change);
         });
       });
+
+      // Add placeholders for MISSING clauses at the end of document
+      const lastClause = container.querySelector('[data-clause-id]:last-child');
+      if (lastClause) {
+        addMissingClausePlaceholders(lastClause.parentElement || container, changes);
+      }
+    }
+  };
+
+  /**
+   * Add visual placeholders for MISSING clauses
+   */
+  const addMissingClausePlaceholders = (container, changes) => {
+    const missingClauses = changes.filter(c => c.change_type === 'missing_clause');
+
+    if (missingClauses.length === 0) {
+      return;
+    }
+
+    console.log(`📌 Adding ${missingClauses.length} missing clause placeholders`);
+
+    // Remove existing placeholders first
+    const existingPlaceholders = container.querySelectorAll('.missing-clause-placeholder');
+    existingPlaceholders.forEach(p => p.remove());
+
+    // Add new placeholders
+    missingClauses.forEach(change => {
+      const placeholder = document.createElement('div');
+      placeholder.className = `missing-clause-placeholder risk-${change.risk_level.toLowerCase()}`;
+      placeholder.dataset.changeId = change.id;
+
+      // Get user_action state
+      const userAction = change.user_action || 'pending';
+
+      // Add state class
+      if (userAction === 'accepted') {
+        placeholder.classList.add('state-accepted');
+      } else if (userAction === 'rejected') {
+        placeholder.classList.add('state-rejected');
+      } else {
+        placeholder.classList.add('state-pending');
+      }
+
+      // Preview text (first 100 chars)
+      const previewText = change.suggested_text?.substring(0, 100) || 'Missing clause';
+      const fullText = change.suggested_text || '';
+
+      placeholder.innerHTML = `
+        <div class="placeholder-header">
+          <span class="placeholder-icon">❌</span>
+          <span class="placeholder-label">Missing Clause</span>
+          <span class="placeholder-risk-badge" style="background: ${getRiskBadgeColor(change.risk_level)}">${change.risk_level}</span>
+        </div>
+        <div class="placeholder-preview">${previewText}${fullText.length > 100 ? '...' : ''}</div>
+        <div class="placeholder-hint">Click to view details →</div>
+      `;
+
+      // Click handler
+      placeholder.addEventListener('click', () => {
+        setSelectedChangeId(change.id);
+        scrollToChange(change.id);
+      });
+
+      // Add hover handlers for inline buttons (only for pending)
+      if (userAction === 'pending') {
+        placeholder.addEventListener('mouseenter', (e) => {
+          const rect = placeholder.getBoundingClientRect();
+          setHoveredChangeId(change.id);
+          setHoverPosition({
+            x: rect.left + rect.width / 2,
+            y: rect.top
+          });
+        });
+
+        placeholder.addEventListener('mouseleave', (e) => {
+          const relatedTarget = e.relatedTarget;
+          if (!relatedTarget || !relatedTarget.closest('.inline-action-buttons')) {
+            setHoveredChangeId(null);
+          }
+        });
+      }
+
+      container.appendChild(placeholder);
+    });
+  };
+
+  /**
+   * Helper to get risk badge color
+   */
+  const getRiskBadgeColor = (riskLevel) => {
+    switch (riskLevel) {
+      case 'High': return '#dc2626';
+      case 'Medium': return '#f59e0b';
+      case 'Low': return '#16a34a';
+      default: return '#6b7280';
     }
   };
 
@@ -368,6 +466,49 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
   };
 
   /**
+   * Update the visual state of a mark element or placeholder in the document
+   */
+  const updateMarkVisualState = (changeId, action) => {
+    // Find all mark elements for this change
+    const marks = document.querySelectorAll(`mark[data-change-id="${changeId}"]`);
+
+    marks.forEach(mark => {
+      // Remove all state classes
+      mark.classList.remove('state-pending', 'state-accepted', 'state-rejected');
+
+      // Add new state class
+      if (action === 'accepted') {
+        mark.classList.add('state-accepted');
+      } else if (action === 'rejected') {
+        mark.classList.add('state-rejected');
+      } else {
+        mark.classList.add('state-pending');
+      }
+
+      console.log(`Updated mark ${changeId} to ${action}, classes: ${mark.className}`);
+    });
+
+    // Also update placeholders for MISSING clauses
+    const placeholders = document.querySelectorAll(`.missing-clause-placeholder[data-change-id="${changeId}"]`);
+
+    placeholders.forEach(placeholder => {
+      // Remove all state classes
+      placeholder.classList.remove('state-pending', 'state-accepted', 'state-rejected');
+
+      // Add new state class
+      if (action === 'accepted') {
+        placeholder.classList.add('state-accepted');
+      } else if (action === 'rejected') {
+        placeholder.classList.add('state-rejected');
+      } else {
+        placeholder.classList.add('state-pending');
+      }
+
+      console.log(`Updated placeholder ${changeId} to ${action}, classes: ${placeholder.className}`);
+    });
+  };
+
+  /**
    * Handle accept/reject actions from AnnotationCard
    */
   const handleChangeAction = async (changeId, action) => {
@@ -380,6 +521,14 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
             : change
         )
       );
+
+      // Update visual state in document immediately
+      updateMarkVisualState(changeId, action);
+
+      // Hide inline buttons if they're showing for this change
+      if (hoveredChangeId === changeId) {
+        setHoveredChangeId(null);
+      }
 
       // Call backend API to persist the action
       const response = await fetch(
@@ -418,20 +567,26 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
             : change
         )
       );
+      // Revert visual state
+      updateMarkVisualState(changeId, 'pending');
       alert(`Failed to update change: ${error.message}`);
     }
   };
 
-  // Group changes by risk level for display
+  // Group changes by status first, then by risk level
+  const pendingChanges = changes.filter(c => c.user_action === 'pending');
+  const acceptedChanges = changes.filter(c => c.user_action === 'accepted');
+  const rejectedChanges = changes.filter(c => c.user_action === 'rejected');
+
   const changesByRisk = {
-    High: changes.filter(c => c.risk_level === 'High' && c.user_action === 'pending'),
-    Medium: changes.filter(c => c.risk_level === 'Medium' && c.user_action === 'pending'),
-    Low: changes.filter(c => c.risk_level === 'Low' && c.user_action === 'pending')
+    High: pendingChanges.filter(c => c.risk_level === 'High'),
+    Medium: pendingChanges.filter(c => c.risk_level === 'Medium'),
+    Low: pendingChanges.filter(c => c.risk_level === 'Low')
   };
 
-  const pendingCount = changes.filter(c => c.user_action === 'pending').length;
-  const acceptedCount = changes.filter(c => c.user_action === 'accepted').length;
-  const rejectedCount = changes.filter(c => c.user_action === 'rejected').length;
+  const pendingCount = pendingChanges.length;
+  const acceptedCount = acceptedChanges.length;
+  const rejectedCount = rejectedChanges.length;
 
   if (loading) {
     return (
@@ -477,6 +632,7 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
                 isSelected={selectedChangeId === change.id}
                 onAccept={() => handleChangeAction(change.id, 'accepted')}
                 onReject={() => handleChangeAction(change.id, 'rejected')}
+                onUndo={() => handleChangeAction(change.id, 'pending')}
               />
             ))}
           </div>
@@ -493,6 +649,7 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
                 isSelected={selectedChangeId === change.id}
                 onAccept={() => handleChangeAction(change.id, 'accepted')}
                 onReject={() => handleChangeAction(change.id, 'rejected')}
+                onUndo={() => handleChangeAction(change.id, 'pending')}
               />
             ))}
           </div>
@@ -509,6 +666,45 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
                 isSelected={selectedChangeId === change.id}
                 onAccept={() => handleChangeAction(change.id, 'accepted')}
                 onReject={() => handleChangeAction(change.id, 'rejected')}
+                onUndo={() => handleChangeAction(change.id, 'pending')}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Accepted Changes */}
+        {acceptedChanges.length > 0 && (
+          <div className="annotation-section">
+            <h4 className="section-title" style={{ color: '#16a34a' }}>
+              ✓ Accepted ({acceptedChanges.length})
+            </h4>
+            {acceptedChanges.map(change => (
+              <AnnotationCard
+                key={change.id}
+                change={change}
+                isSelected={selectedChangeId === change.id}
+                onAccept={() => handleChangeAction(change.id, 'accepted')}
+                onReject={() => handleChangeAction(change.id, 'rejected')}
+                onUndo={() => handleChangeAction(change.id, 'pending')}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Rejected Changes */}
+        {rejectedChanges.length > 0 && (
+          <div className="annotation-section">
+            <h4 className="section-title" style={{ color: '#dc2626' }}>
+              ✗ Rejected ({rejectedChanges.length})
+            </h4>
+            {rejectedChanges.map(change => (
+              <AnnotationCard
+                key={change.id}
+                change={change}
+                isSelected={selectedChangeId === change.id}
+                onAccept={() => handleChangeAction(change.id, 'accepted')}
+                onReject={() => handleChangeAction(change.id, 'rejected')}
+                onUndo={() => handleChangeAction(change.id, 'pending')}
               />
             ))}
           </div>
