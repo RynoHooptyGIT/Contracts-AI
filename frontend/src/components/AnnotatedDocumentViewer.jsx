@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DOMPurify from 'dompurify'; // XSS protection
+import AnnotationOverlay from './AnnotationOverlay';
+import ColorLegendSidebar from './ColorLegendSidebar';
 import './AnnotatedDocumentViewer.css';
 
 /**
@@ -13,7 +15,16 @@ import './AnnotatedDocumentViewer.css';
  * of allowed tags and attributes before rendering any HTML content. The sanitization
  * happens on line 50-58 before the content is stored in state.
  */
-export default function AnnotatedDocumentViewer({ documentId, sessionId }) {
+export default function AnnotatedDocumentViewer({
+  documentId,
+  sessionId,
+  progressiveChanges,
+  progress,
+  summary,
+  finalSummary,
+  analysisComplete,
+  highlightedClauseId
+}) {
   const [htmlContent, setHtmlContent] = useState('');
   const [cssContent, setCssContent] = useState('');
   const [clauseMarkers, setClauseMarkers] = useState([]);
@@ -28,7 +39,7 @@ export default function AnnotatedDocumentViewer({ documentId, sessionId }) {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/documents/${documentId}/render-html`);
+        const response = await fetch(`http://localhost:8001/api/documents/${documentId}/render-html`);
 
         if (!response.ok) {
           throw new Error(`Failed to render document: ${response.statusText}`);
@@ -66,6 +77,28 @@ export default function AnnotatedDocumentViewer({ documentId, sessionId }) {
       loadDocument();
     }
   }, [documentId]);
+
+  // Apply highlight effect to clause element when highlightedClauseId changes
+  useEffect(() => {
+    if (!highlightedClauseId || !docContainerRef.current) return;
+
+    const clauseElement = docContainerRef.current.querySelector(
+      `[data-clause-id="${highlightedClauseId}"]`
+    );
+
+    if (clauseElement) {
+      // Add highlighting class
+      clauseElement.classList.add('clause-analyzing');
+
+      // Remove after animation completes
+      setTimeout(() => {
+        clauseElement.classList.remove('clause-analyzing');
+      }, 1000);
+
+      // Scroll clause into view
+      clauseElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlightedClauseId]);
 
   if (loading) {
     return (
@@ -111,19 +144,25 @@ export default function AnnotatedDocumentViewer({ documentId, sessionId }) {
         />
       </div>
 
-      {/* Clause Markers Info (Debug - will be replaced with annotation panel) */}
-      {clauseMarkers.length > 0 && (
-        <div className="clause-markers-info">
-          <h4>Clauses Detected: {clauseMarkers.length}</h4>
-          <ul>
-            {clauseMarkers.slice(0, 5).map((marker, idx) => (
-              <li key={idx}>
-                {marker.clause_title} ({marker.clause_type})
-              </li>
-            ))}
-            {clauseMarkers.length > 5 && <li>... and {clauseMarkers.length - 5} more</li>}
-          </ul>
-        </div>
+      {/* Color Legend Sidebar */}
+      <ColorLegendSidebar
+        progress={progress}
+        summary={summary}
+        finalSummary={finalSummary}
+        analysisComplete={analysisComplete}
+      />
+
+      {/* Annotation Overlay - Visual annotations with accept/reject */}
+      {sessionId && (
+        <AnnotationOverlay
+          sessionId={sessionId}
+          documentContainerRef={docContainerRef}
+          progressiveChanges={progressiveChanges}
+          onChangeAction={(changeId, action) => {
+            console.log(`Change ${changeId} action: ${action}`);
+            // API call will be implemented in Phase 3
+          }}
+        />
       )}
     </div>
   );

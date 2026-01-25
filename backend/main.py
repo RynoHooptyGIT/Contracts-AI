@@ -1,8 +1,11 @@
 import os
+import json
+import sqlite3
 import httpx
 import tempfile
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, File, UploadFile
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, validator
 from typing import List, Dict, Any, Optional
@@ -37,6 +40,14 @@ try:
 except ImportError:
     REDLINING_SERVICE_AVAILABLE = False
     log_warning("RedliningService not available - redlining endpoints will return 501", "STARTUP")
+
+try:
+    from services.redlining_service_progressive import ProgressiveRedliningService
+    from sse_starlette.sse import EventSourceResponse
+    PROGRESSIVE_REDLINING_AVAILABLE = True
+except ImportError:
+    PROGRESSIVE_REDLINING_AVAILABLE = False
+    log_warning("ProgressiveRedliningService not available - progressive redlining endpoints will return 501", "STARTUP")
 
 # Load environment variables
 load_dotenv()
@@ -125,6 +136,15 @@ class StartRedliningRequest(BaseModel):
             raise ValueError("document_id cannot be empty")
         return v.strip()
 
+class UpdateChangeActionRequest(BaseModel):
+    action: str
+
+    @validator('action')
+    def validate_action(cls, v):
+        if v not in ['accepted', 'rejected', 'pending']:
+            raise ValueError("action must be 'accepted', 'rejected', or 'pending'")
+        return v
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize database and document manager on startup"""
@@ -160,6 +180,12 @@ async def startup_event():
         log_info("Initializing redlining service...", "STARTUP")
         app.state.redlining_service = RedliningService()
         log_success("Redlining service ready", "STARTUP")
+
+    # Initialize progressive redlining service if available
+    if PROGRESSIVE_REDLINING_AVAILABLE:
+        log_info("Initializing progressive redlining service...", "STARTUP")
+        app.state.progressive_redlining_service = ProgressiveRedliningService()
+        log_success("Progressive redlining service ready", "STARTUP")
 
 @app.get("/")
 async def root():
@@ -219,7 +245,7 @@ async def stream_logs(request: Request):
     )
 
 @app.post("/api/documents/upload")
-@limiter.limit("5/minute")
+@limiter.limit("30/minute")
 async def upload_documents(request: Request, file: UploadFile = File(...)):
     """Upload ZIP file (batch) or individual document (PDF/DOCX/TXT) for RAG ingestion"""
     log_info(f"Received upload request: {file.filename}", "UPLOAD")
@@ -613,6 +639,39 @@ async def extract_clauses(request: Request, document_id: str):
         log_error(f"Failed to extract clauses from document {document_id}: {str(e)}", "CLAUSES")
         raise HTTPException(status_code=500, detail=f"Failed to extract clauses: {str(e)}")
 
+@app.get("/api/documents/{document_id}")
+async def get_document_info(document_id: str):
+    """Get document metadata by ID"""
+    try:
+        conn = sqlite3.connect(os.getenv("DATABASE_PATH", "/app/data/documents.db"))
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT id, filename, filepath, file_type, uploaded_at, category
+            FROM documents
+            WHERE id = ?
+        """, (document_id,))
+
+        row = cursor.fetchone()
+        conn.close()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Document not found")
+
+        return {
+            "id": row[0],
+            "filename": row[1],
+            "filepath": row[2],
+            "file_type": row[3],
+            "uploaded_at": row[4],
+            "category": row[5]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_error(f"Failed to fetch document {document_id}: {str(e)}", "DOCUMENTS")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/documents/{document_id}/render-html")
 @limiter.limit("30/minute")
 async def render_document_html(request: Request, document_id: str):
@@ -678,6 +737,129 @@ async def start_redlining_session(request: Request, redlining_request: StartRedl
     except Exception as e:
         log_error(f"Failed to start redlining session: {str(e)}", "REDLINING")
         raise HTTPException(status_code=500, detail=f"Failed to start redlining session: {str(e)}")
+
+@app.post("/api/redlining/start-progressive")
+@limiter.limit("10/minute")
+async def start_progressive_redlining(request: Request, redlining_request: StartRedliningRequest):
+    """
+    Start progressive redlining session - returns immediately with session_id
+    Analysis happens in background and streams via SSE endpoint
+    """
+    if not PROGRESSIVE_REDLINING_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="Progressive redlining service not available. Please ensure sse-starlette is installed."
+        )
+
+    try:
+        log_info(
+            f"Starting progressive redlining for document {redlining_request.document_id} (category: {redlining_request.category})",
+            "PROGRESSIVE_REDLINING"
+        )
+
+        # Start session (returns immediately)
+        result = await app.state.progressive_redlining_service.start_progressive_session(
+            document_id=redlining_request.document_id,
+            category=redlining_request.category
+        )
+
+        log_success(f"Progressive session created: {result.get('session_id', 'unknown')}", "PROGRESSIVE_REDLINING")
+
+        return {
+            "success": True,
+            **result
+        }
+
+    except ValueError as e:
+        log_warning(f"Invalid progressive redlining request: {str(e)}", "PROGRESSIVE_REDLINING")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        log_error(f"Failed to start progressive redlining: {str(e)}", "PROGRESSIVE_REDLINING")
+        raise HTTPException(status_code=500, detail=f"Failed to start progressive redlining: {str(e)}")
+
+@app.get("/api/redlining/session/{session_id}/stream")
+async def stream_redlining_progress(session_id: str):
+    """
+    Server-Sent Events (SSE) stream for progressive clause analysis
+    Streams events as each clause is compared in real-time
+    """
+    if not PROGRESSIVE_REDLINING_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="Progressive redlining service not available. Please ensure sse-starlette is installed."
+        )
+
+    async def event_generator():
+        """Generate SSE events from progressive analysis"""
+        try:
+            log_info(f"Starting SSE stream for session: {session_id}", "PROGRESSIVE_REDLINING")
+
+            # Get session info
+            session = app.state.progressive_redlining_service.get_session(session_id)
+            if not session:
+                yield {
+                    "event": "error",
+                    "data": json.dumps({"message": "Session not found"})
+                }
+                return
+
+            document_id = session["uploaded_document_id"]
+            template_document_id = session.get("template_id")
+
+            # Handle "no_template" status
+            if session["status"] == "no_template":
+                yield {
+                    "event": "error",
+                    "data": json.dumps({"message": "No template found for session"})
+                }
+                return
+
+            # Get template document ID from template_id if needed
+            if not template_document_id:
+                yield {
+                    "event": "error",
+                    "data": json.dumps({"message": "No template document found"})
+                }
+                return
+
+            # For now, we need to get the template document ID from the template
+            # This is a bit of a hack - we should store template_document_id in session
+            # But for MVP, we'll fetch it from the database
+            conn = sqlite3.connect(os.getenv("DATABASE_PATH", "/app/data/documents.db"))
+            cursor = conn.cursor()
+            cursor.execute("SELECT document_id FROM golden_templates WHERE id = ?", (template_document_id,))
+            row = cursor.fetchone()
+            conn.close()
+
+            if not row:
+                yield {
+                    "event": "error",
+                    "data": json.dumps({"message": "Template document not found"})
+                }
+                return
+
+            template_doc_id = row[0]
+
+            # Stream progressive analysis
+            log_info(f"Streaming analysis for document {document_id} vs template {template_doc_id}", "PROGRESSIVE_REDLINING")
+            async for event in app.state.progressive_redlining_service.analyze_progressive(
+                session_id, document_id, template_doc_id
+            ):
+                yield {
+                    "event": event["event"],
+                    "data": json.dumps(event["data"])
+                }
+
+            log_success(f"SSE stream completed for session: {session_id}", "PROGRESSIVE_REDLINING")
+
+        except Exception as e:
+            log_error(f"SSE stream error: {str(e)}", "PROGRESSIVE_REDLINING")
+            yield {
+                "event": "error",
+                "data": json.dumps({"message": str(e)})
+            }
+
+    return EventSourceResponse(event_generator())
 
 @app.get("/api/redlining/session/{session_id}")
 async def get_redlining_session(session_id: str):
@@ -786,6 +968,124 @@ async def get_session_individual_changes(session_id: str):
     except Exception as e:
         log_error(f"Failed to get individual changes for session {session_id}: {str(e)}", "REDLINING")
         raise HTTPException(status_code=500, detail=f"Failed to get changes: {str(e)}")
+
+@app.patch("/api/redlining/changes/{change_id}/action")
+@limiter.limit("100/minute")
+async def update_change_action(request: Request, change_id: str, action_request: UpdateChangeActionRequest):
+    """
+    Update user action on an individual change
+
+    Args:
+        change_id: The annotation change ID
+        action_request: Contains 'action' field ('accepted', 'rejected', or 'pending')
+
+    Returns:
+        Updated change object
+    """
+    try:
+        log_info(f"Updating change {change_id} action to: {action_request.action}", "REDLINING")
+
+        # Update the annotation_changes table
+        db_conn = app.state.doc_manager._get_connection()
+        cursor = db_conn.cursor()
+
+        # First, verify the change exists
+        cursor.execute("SELECT id FROM annotation_changes WHERE id = ?", (change_id,))
+        if not cursor.fetchone():
+            db_conn.close()
+            log_warning(f"Change not found: {change_id}", "REDLINING")
+            raise HTTPException(status_code=404, detail="Change not found")
+
+        # Update the user_action field
+        cursor.execute("""
+            UPDATE annotation_changes
+            SET user_action = ?
+            WHERE id = ?
+        """, (action_request.action, change_id))
+
+        db_conn.commit()
+
+        # Fetch the updated change
+        cursor.execute("""
+            SELECT id, comparison_id, change_type, original_text,
+                   suggested_text, start_offset, end_offset,
+                   risk_level, rationale, user_action
+            FROM annotation_changes
+            WHERE id = ?
+        """, (change_id,))
+
+        row = cursor.fetchone()
+        db_conn.close()
+
+        if not row:
+            log_error(f"Change not found after update: {change_id}", "REDLINING")
+            raise HTTPException(status_code=500, detail="Failed to retrieve updated change")
+
+        updated_change = {
+            "id": row[0],
+            "comparison_id": row[1],
+            "change_type": row[2],
+            "original_text": row[3],
+            "suggested_text": row[4],
+            "start_offset": row[5],
+            "end_offset": row[6],
+            "risk_level": row[7],
+            "rationale": row[8],
+            "user_action": row[9]
+        }
+
+        log_success(f"Updated change {change_id} action to {action_request.action}", "REDLINING")
+        return {
+            "success": True,
+            "change": updated_change
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_error(f"Failed to update change action: {str(e)}", "REDLINING")
+        raise HTTPException(status_code=500, detail=f"Failed to update change: {str(e)}")
+
+@app.post("/api/redlining/session/{session_id}/export")
+@limiter.limit("10/minute")
+async def export_redlined_document(request: Request, session_id: str):
+    """
+    Export redlined document as DOCX with track changes
+
+    Returns: DOCX file download with accepted/rejected changes
+    """
+    try:
+        log_info(f"Starting DOCX export for session: {session_id}", "REDLINING")
+
+        from services.docx_exporter import DocxExporter
+
+        # Initialize exporter
+        db_path = os.getenv("DATABASE_PATH", "/app/data/documents.db")
+        exporter = DocxExporter(db_path=db_path)
+
+        # Generate DOCX with track changes
+        docx_bytes = exporter.export_with_track_changes(session_id)
+
+        # Generate filename
+        filename = exporter.get_export_filename(session_id)
+
+        log_success(f"DOCX export completed for session {session_id}", "REDLINING")
+
+        # Return as downloadable file
+        return Response(
+            content=docx_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+
+    except ValueError as e:
+        log_warning(f"Session not found for export: {session_id}", "REDLINING")
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        log_error(f"Failed to export DOCX for session {session_id}: {str(e)}", "REDLINING")
+        raise HTTPException(status_code=500, detail=f"Failed to export document: {str(e)}")
 
 @app.delete("/api/redlining/session/{session_id}")
 @limiter.limit("10/minute")

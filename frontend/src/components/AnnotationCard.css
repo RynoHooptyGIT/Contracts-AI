@@ -1,0 +1,342 @@
+/* AnnotationCard.css - Individual change card styling */
+
+.annotation-card {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border: 2px solid #e5e7eb;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.annotation-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.annotation-card.selected {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+  border-color: #667eea;
+}
+
+/* Risk-based border colors */
+.annotation-card.risk-high {
+  border-left: 4px solid #dc2626;
+}
+
+.annotation-card.risk-medium {
+  border-left: 4px solid #f59e0b;
+}
+
+.annotation-card.risk-low {
+  border-left: 4px solid #16a34a;
+}
+
+/* Action status styling */
+.annotation-card.action-accepted {
+  background: #f0fdf4;
+  border-color: #16a34a;
+  opacity: 0.8;
+}
+
+.annotation-card.action-rejected {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  opacity: 0.7;
+}
+
+/* Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.change-icon {
+  font-size: 1.25rem;
+}
+
+.change-type-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.risk-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.action-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.action-badge.accepted {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.action-badge.rejected {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* Content */
+.card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Diff View (for modifications) */
+.diff-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 0.375rem;
+  border: 1px solid #e5e7eb;
+}
+
+.diff-old,
+.diff-new {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.diff-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.diff-text {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid #e5e7eb;
+}
+
+.old-text {
+  background: #fee2e2;
+  color: #7f1d1d;
+  text-decoration: line-through;
+}
+
+.new-text {
+  background: #dcfce7;
+  color: #14532d;
+  font-weight: 500;
+}
+
+.diff-arrow {
+  font-size: 1.25rem;
+  color: #9ca3af;
+  align-self: center;
+  margin: 0.25rem 0;
+}
+
+/* Single Text (for additions/deletions/etc) */
+.single-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 0.375rem;
+  border: 1px solid #e5e7eb;
+}
+
+.text-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.text-content {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid #e5e7eb;
+}
+
+.addition-text {
+  background: #dcfce7;
+  color: #14532d;
+  border-color: #86efac;
+}
+
+.deletion-text {
+  background: #fee2e2;
+  color: #7f1d1d;
+  border-color: #fca5a5;
+  text-decoration: line-through;
+}
+
+.missing-text {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fecaca;
+  border-style: dashed;
+}
+
+.extra-text {
+  background: #eff6ff;
+  color: #1e3a8a;
+  border-color: #bfdbfe;
+}
+
+/* Rationale */
+.rationale {
+  padding: 0.75rem;
+  background: #f3f4f6;
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db;
+}
+
+.rationale-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rationale-header:hover {
+  opacity: 0.8;
+}
+
+.rationale-icon {
+  font-size: 1rem;
+}
+
+.rationale-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.expand-icon {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+
+.rationale.expanded .expand-icon {
+  transform: rotate(90deg);
+}
+
+.rationale-content {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #d1d5db;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #374151;
+}
+
+/* Position Info (debugging) */
+.position-info {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-family: monospace;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 0.25rem;
+}
+
+.position-label {
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+/* Actions */
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn-accept,
+.btn-reject,
+.btn-undo {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.btn-accept {
+  background: #16a34a;
+  color: white;
+}
+
+.btn-accept:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(22, 163, 74, 0.3);
+}
+
+.btn-reject {
+  background: #dc2626;
+  color: white;
+}
+
+.btn-reject:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+}
+
+.btn-undo {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.btn-undo:hover {
+  background: #e5e7eb;
+  color: #374151;
+  transform: translateY(-1px);
+}
+
+/* Disabled state */
+.annotation-card.action-accepted .card-actions,
+.annotation-card.action-rejected .card-actions {
+  opacity: 0.6;
+}

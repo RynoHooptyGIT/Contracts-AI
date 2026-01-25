@@ -16,6 +16,9 @@ python-dotenv==1.0.1
 # Rate Limiting
 slowapi==0.1.9
 
+# Server-Sent Events (SSE) for Progressive Streaming
+sse-starlette==1.6.5
+
 # RAG (Retrieval Augmented Generation)
 numpy==1.24.3                 # Pin numpy for FAISS compatibility
 sentence-transformers==2.3.1  # Embedding generation

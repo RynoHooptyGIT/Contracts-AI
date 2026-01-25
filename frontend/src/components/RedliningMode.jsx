@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './RedliningMode.css';
-import AnnotatedDocumentViewer from './AnnotatedDocumentViewer';
+import AnnotatedDocumentPanel from './AnnotatedDocumentPanel';
+import RedliningChat from './RedliningChat';
 
 /**
  * RedliningMode - Main container for contract redlining workflow
@@ -13,82 +14,180 @@ import AnnotatedDocumentViewer from './AnnotatedDocumentViewer';
  * 5. Export redlined document
  */
 const RedliningMode = ({ onExit }) => {
-  const [currentStep, setCurrentStep] = useState('upload'); // upload, processing, results, review
+  const [currentStep, setCurrentStep] = useState('upload'); // upload, review
   const [sessionData, setSessionData] = useState(null);
   const [comparisons, setComparisons] = useState([]);
   const [loadingComparisons, setLoadingComparisons] = useState(false);
-  const [reviewView, setReviewView] = useState('document'); // 'document' or 'comparison'
-  const [processingStatus, setProcessingStatus] = useState({
-    extraction: 'pending',
-    matching: 'pending',
-    comparison: 'pending',
-    analysis: 'pending'
-  });
+
+  // Progressive analysis state
+  const [analysisComplete, setAnalysisComplete] = useState(false);
+  const [progressiveChanges, setProgressiveChanges] = useState([]);
+  const [summary, setSummary] = useState({ matched: 0, modified: 0, missing: 0, extra: 0 });
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [finalSummary, setFinalSummary] = useState(null);
+  const [eventSource, setEventSource] = useState(null);
+  const [highlightedClauseId, setHighlightedClauseId] = useState(null);
 
   const steps = [
     { id: 'upload', label: 'Upload Contract', icon: '📤' },
-    { id: 'processing', label: 'Processing', icon: '⚙️' },
-    { id: 'results', label: 'Results', icon: '📊' },
     { id: 'review', label: 'Review', icon: '🔍' }
   ];
 
   const handleFileUpload = async (file, category) => {
-    setCurrentStep('processing');
-
     try {
+      console.log('🚀 [RedliningMode] Starting file upload:', file.name, 'Category:', category);
+
       // Step 1: Upload document
       const formData = new FormData();
       formData.append('file', file);
       formData.append('category', category);
 
+      console.log('📤 [RedliningMode] Uploading to /api/documents/upload...');
       const uploadResponse = await fetch('http://localhost:8001/api/documents/upload', {
         method: 'POST',
         body: formData
       });
 
+      console.log('✅ [RedliningMode] Upload response status:', uploadResponse.status);
       const uploadResult = await uploadResponse.json();
+      console.log('📦 [RedliningMode] Upload result:', uploadResult);
 
-      if (!uploadResult.success || uploadResult.details.documents.length === 0) {
+      if (!uploadResult.success || !uploadResult.details || !uploadResult.details.documents || uploadResult.details.documents.length === 0) {
+        console.error('❌ [RedliningMode] Upload validation failed:', uploadResult);
         throw new Error('Failed to upload document');
       }
 
       const documentId = uploadResult.details.documents[0].id;
+      console.log('🆔 [RedliningMode] Document ID:', documentId);
 
-      // Step 2: Start redlining session
-      setProcessingStatus(prev => ({ ...prev, extraction: 'in_progress' }));
-
-      const sessionResponse = await fetch('http://localhost:8001/api/redlining/start', {
+      // Step 2: Start progressive redlining (returns immediately)
+      console.log('🔄 [RedliningMode] Starting progressive redlining...');
+      const sessionResponse = await fetch('http://localhost:8001/api/redlining/start-progressive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ document_id: documentId, category })
       });
 
+      console.log('✅ [RedliningMode] Session response status:', sessionResponse.status);
       const sessionResult = await sessionResponse.json();
+      console.log('📊 [RedliningMode] Session result:', sessionResult);
 
       if (!sessionResult.success) {
-        throw new Error(sessionResult.detail || 'Failed to start redlining session');
+        throw new Error(sessionResult.detail || 'Failed to start progressive redlining');
       }
-
-      // Update processing status
-      setProcessingStatus({
-        extraction: 'completed',
-        matching: 'completed',
-        comparison: 'completed',
-        analysis: 'completed'
-      });
 
       // Store session data
       setSessionData(sessionResult);
+      console.log('💾 [RedliningMode] Session data stored');
 
-      // Move to results
-      setTimeout(() => setCurrentStep('results'), 500);
+      // Move directly to review screen
+      setCurrentStep('review');
+      console.log('🎯 [RedliningMode] Moved to review step');
+
+      // Step 3: Connect to SSE stream for progressive updates
+      if (sessionResult.status === 'processing') {
+        console.log('🌊 [RedliningMode] Connecting to SSE stream...');
+        connectToProgressStream(sessionResult.session_id);
+      } else {
+        // No template found or other issue
+        setAnalysisComplete(true);
+        alert(sessionResult.message || 'No template found for comparison');
+      }
 
     } catch (error) {
-      console.error('Redlining error:', error);
+      console.error('❌ [RedliningMode] Error:', error);
+      console.error('❌ [RedliningMode] Error stack:', error.stack);
       alert(`Error: ${error.message}`);
       setCurrentStep('upload');
     }
   };
+
+  const connectToProgressStream = (sessionId) => {
+    console.log(`Connecting to SSE stream for session: ${sessionId}`);
+
+    const es = new EventSource(`http://localhost:8001/api/redlining/session/${sessionId}/stream`);
+
+    es.addEventListener('clause_compared', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        handleClauseCompared(data);
+      } catch (error) {
+        console.error('Failed to parse clause_compared event:', error);
+      }
+    });
+
+    es.addEventListener('complete', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        handleAnalysisComplete(data);
+        es.close();
+      } catch (error) {
+        console.error('Failed to parse complete event:', error);
+      }
+    });
+
+    es.addEventListener('error', (event) => {
+      console.error('SSE error:', event);
+      if (event.data) {
+        try {
+          const data = JSON.parse(event.data);
+          alert(`Analysis error: ${data.message}`);
+        } catch (e) {
+          console.error('Failed to parse error event:', e);
+        }
+      }
+      es.close();
+    });
+
+    es.onerror = (error) => {
+      console.error('EventSource failed:', error);
+      es.close();
+    };
+
+    setEventSource(es);
+  };
+
+  const handleClauseCompared = (data) => {
+    console.log('Clause compared:', data);
+
+    // Highlight clause (will fade after 1 second)
+    if (data.clause_id) {
+      setHighlightedClauseId(data.clause_id);
+      setTimeout(() => setHighlightedClauseId(null), 1000);
+    }
+
+    // Add changes to progressive changes list
+    if (data.changes && data.changes.length > 0) {
+      setProgressiveChanges(prev => [...prev, ...data.changes]);
+    }
+
+    // Update summary counts
+    setSummary(prev => ({
+      ...prev,
+      [data.comparison_type]: (prev[data.comparison_type] || 0) + 1
+    }));
+
+    // Update progress
+    if (data.progress) {
+      setProgress(data.progress);
+    }
+  };
+
+  const handleAnalysisComplete = (data) => {
+    console.log('Analysis complete:', data);
+    setAnalysisComplete(true);
+    setFinalSummary(data);
+  };
+
+  // Cleanup EventSource on unmount
+  React.useEffect(() => {
+    return () => {
+      if (eventSource) {
+        console.log('Closing EventSource connection');
+        eventSource.close();
+      }
+    };
+  }, [eventSource]);
 
   const fetchComparisons = async () => {
     if (!sessionData || !sessionData.session_id) {
@@ -114,12 +213,6 @@ const RedliningMode = ({ onExit }) => {
     } finally {
       setLoadingComparisons(false);
     }
-  };
-
-  const handleStartReview = async () => {
-    setLoadingComparisons(true);
-    await fetchComparisons();
-    setCurrentStep('review');
   };
 
   const renderStepIndicator = () => (
@@ -215,92 +308,49 @@ const RedliningMode = ({ onExit }) => {
     </div>
   );
 
-  const renderResultsStep = () => {
-    if (!sessionData) return null;
+  const handleExport = async () => {
+    if (!sessionData) return;
 
-    // Provide defaults if summary is missing
-    const summary = sessionData.summary || { matched: 0, modified: 0, missing: 0, extra: 0 };
-    const riskScore = sessionData.overall_risk_score || 0;
-    const matchScore = sessionData.template_match_score || 0;
-    const deviationCount = sessionData.deviation_count || 0;
+    try {
+      const response = await fetch(
+        `http://localhost:8001/api/redlining/session/${sessionData.session_id}/export`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
 
-    const riskLevel = riskScore > 0.7 ? 'High' : riskScore > 0.4 ? 'Medium' : 'Low';
-    const riskColor = riskLevel === 'High' ? '#ef4444' :
-                      riskLevel === 'Medium' ? '#f59e0b' : '#10b981';
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.status}`);
+      }
 
-    return (
-      <div className="redlining-results">
-        <div className="results-header">
-          <h2>📊 Redlining Results</h2>
-          <button className="btn-secondary" onClick={onExit}>
-            ← Back to Documents
-          </button>
-        </div>
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `redlined_contract_${sessionData.session_id.slice(0, 8)}.docx`;
 
-        <div className="results-summary">
-          <div className="summary-card risk-card">
-            <div className="card-label">Overall Risk</div>
-            <div className="card-value" style={{ color: riskColor }}>
-              {riskLevel}
-              <span className="risk-score">
-                {(riskScore * 100).toFixed(0)}%
-              </span>
-            </div>
-          </div>
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1].replace(/['"]/g, '');
+        }
+      }
 
-          <div className="summary-card">
-            <div className="card-label">Template Match</div>
-            <div className="card-value">
-              {matchScore > 0 ? `${(matchScore * 100).toFixed(0)}%` : 'N/A'}
-              <span className="card-subtext">{matchScore > 0 ? 'similarity' : 'no template'}</span>
-            </div>
-          </div>
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
 
-          <div className="summary-card">
-            <div className="card-label">Deviations Found</div>
-            <div className="card-value">
-              {deviationCount}
-              <span className="card-subtext">differences</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="results-breakdown">
-          <h3>Clause Breakdown</h3>
-          <div className="breakdown-grid">
-            <div className="breakdown-item matched">
-              <div className="item-count">{summary.matched}</div>
-              <div className="item-label">✓ Matched</div>
-            </div>
-            <div className="breakdown-item modified">
-              <div className="item-count">{summary.modified}</div>
-              <div className="item-label">~ Modified</div>
-            </div>
-            <div className="breakdown-item missing">
-              <div className="item-count">{summary.missing}</div>
-              <div className="item-label">✗ Missing</div>
-            </div>
-            <div className="breakdown-item extra">
-              <div className="item-count">{summary.extra}</div>
-              <div className="item-label">+ Extra</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="results-actions">
-          <button
-            className="btn-primary"
-            onClick={handleStartReview}
-            disabled={loadingComparisons}
-          >
-            {loadingComparisons ? 'Loading...' : 'Review Clause-by-Clause →'}
-          </button>
-          <button className="btn-secondary">
-            Export Report
-          </button>
-        </div>
-      </div>
-    );
+      console.log(`Successfully exported: ${filename}`);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert(`Failed to export document: ${error.message}`);
+    }
   };
 
   const renderReviewStep = () => {
@@ -313,160 +363,67 @@ const RedliningMode = ({ onExit }) => {
       );
     }
 
-    // Group comparisons by type
-    const grouped = {
-      matched: comparisons.filter(c => c.comparison_type === 'matched'),
-      modified: comparisons.filter(c => c.comparison_type === 'modified'),
-      missing: comparisons.filter(c => c.comparison_type === 'missing'),
-      extra: comparisons.filter(c => c.comparison_type === 'extra')
-    };
-
-    const getRiskColor = (level) => {
-      switch (level) {
-        case 'High': return '#ef4444';
-        case 'Medium': return '#f59e0b';
-        case 'Low': return '#10b981';
-        default: return '#6b7280';
-      }
-    };
+    if (!sessionData) {
+      return (
+        <div className="redlining-review">
+          <p>No session data available</p>
+          <button className="btn-secondary" onClick={() => setCurrentStep('results')}>
+            ← Back to Results
+          </button>
+        </div>
+      );
+    }
 
     return (
-      <div className="redlining-review">
-        <div className="review-header">
-          <h2>🔍 Clause-by-Clause Review</h2>
-          <div className="review-controls">
-            <div className="view-toggle">
-              <button
-                className={reviewView === 'document' ? 'toggle-btn active' : 'toggle-btn'}
-                onClick={() => setReviewView('document')}
-              >
-                📄 Document View
-              </button>
-              <button
-                className={reviewView === 'comparison' ? 'toggle-btn active' : 'toggle-btn'}
-                onClick={() => setReviewView('comparison')}
-              >
-                📋 Comparison Cards
-              </button>
-            </div>
-            <button className="btn-secondary" onClick={() => setCurrentStep('results')}>
-              ← Back to Results
-            </button>
+      <div className="redlining-review-layout">
+        {/* Compact Header with Stats */}
+        <div className="review-compact-header">
+          <div className="header-left">
+            <span className="header-icon">📋</span>
+            <h2>Visual Redlining Review</h2>
+            <span className="session-badge">Session: {sessionData.session_id.substring(0, 8)}</span>
           </div>
+
+          <div className="header-stats">
+            {analysisComplete ? (
+              <span className="stat-item">
+                ✅ Complete | ✓{summary.matched} ~{summary.modified} ✗{summary.missing} +{summary.extra}
+              </span>
+            ) : (
+              <span className="stat-item analyzing">
+                Analyzing... {progress.current}/{progress.total} clauses | ✓{summary.matched} ~{summary.modified}
+              </span>
+            )}
+          </div>
+
+          <button className="export-button" onClick={handleExport}>
+            📥 Export DOCX
+          </button>
         </div>
 
-        <div className="review-content">
-          {/* Document View - Visual Redlining */}
-          {reviewView === 'document' && sessionData && (
-            <div className="document-view-container">
-              <AnnotatedDocumentViewer
-                documentId={sessionData.uploaded_document_id}
-                sessionId={sessionData.session_id}
-              />
-            </div>
-          )}
+        {/* Split Layout: Document (75%) + Chat (25%) */}
+        <div className="redlining-split-layout">
+          {/* Left: Document Panel (75%) */}
+          <div className="document-panel-container">
+            <AnnotatedDocumentPanel
+              documentId={sessionData.uploaded_document_id}
+              sessionId={sessionData.session_id}
+              progressiveChanges={progressiveChanges}
+              progress={progress}
+              summary={summary}
+              finalSummary={finalSummary}
+              analysisComplete={analysisComplete}
+              highlightedClauseId={highlightedClauseId}
+            />
+          </div>
 
-          {/* Comparison Cards View */}
-          {reviewView === 'comparison' && (
-            <>
-              {/* Matched Clauses */}
-              {grouped.matched.length > 0 && (
-            <div className="comparison-section matched-section">
-              <h3>✓ Matched Clauses ({grouped.matched.length})</h3>
-              {grouped.matched.map((comp) => (
-                <div key={comp.id} className="comparison-card matched-card">
-                  <div className="comparison-header">
-                    <span className="comparison-icon">✓</span>
-                    <div className="comparison-meta">
-                      <span className="risk-badge" style={{ backgroundColor: getRiskColor(comp.risk_level) }}>
-                        {comp.risk_level} Risk
-                      </span>
-                      <span className="similarity-score">
-                        {(comp.similarity_score * 100).toFixed(0)}% match
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Modified Clauses */}
-          {grouped.modified.length > 0 && (
-            <div className="comparison-section modified-section">
-              <h3>~ Modified Clauses ({grouped.modified.length})</h3>
-              {grouped.modified.map((comp) => (
-                <div key={comp.id} className="comparison-card modified-card">
-                  <div className="comparison-header">
-                    <span className="comparison-icon">~</span>
-                    <div className="comparison-meta">
-                      <span className="risk-badge" style={{ backgroundColor: getRiskColor(comp.risk_level) }}>
-                        {comp.risk_level} Risk
-                      </span>
-                      <span className="similarity-score">
-                        {(comp.similarity_score * 100).toFixed(0)}% match
-                      </span>
-                    </div>
-                  </div>
-                  {comp.deviation_summary && (
-                    <div className="deviation-summary">
-                      <strong>Deviation:</strong> {comp.deviation_summary}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Missing Clauses */}
-          {grouped.missing.length > 0 && (
-            <div className="comparison-section missing-section">
-              <h3>✗ Missing Clauses ({grouped.missing.length})</h3>
-              <p className="section-warning">These clauses are in the golden template but missing from your contract.</p>
-              {grouped.missing.map((comp) => (
-                <div key={comp.id} className="comparison-card missing-card">
-                  <div className="comparison-header">
-                    <span className="comparison-icon">✗</span>
-                    <div className="comparison-meta">
-                      <span className="risk-badge" style={{ backgroundColor: getRiskColor(comp.risk_level) }}>
-                        {comp.risk_level} Risk
-                      </span>
-                    </div>
-                  </div>
-                  <div className="clause-note">Missing critical protection clause</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Extra Clauses */}
-          {grouped.extra.length > 0 && (
-            <div className="comparison-section extra-section">
-              <h3>+ Extra Clauses ({grouped.extra.length})</h3>
-              <p className="section-info">These clauses are in your contract but not in the golden template.</p>
-              {grouped.extra.map((comp) => (
-                <div key={comp.id} className="comparison-card extra-card">
-                  <div className="comparison-header">
-                    <span className="comparison-icon">+</span>
-                    <div className="comparison-meta">
-                      <span className="risk-badge" style={{ backgroundColor: getRiskColor(comp.risk_level) }}>
-                        {comp.risk_level} Risk
-                      </span>
-                    </div>
-                  </div>
-                  <div className="clause-note">Additional clause requires review</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-              {comparisons.length === 0 && (
-                <div className="no-comparisons">
-                  <p>No comparison data available</p>
-                </div>
-              )}
-            </>
-          )}
+          {/* Right: Chat Panel (25%) */}
+          <div className="chat-panel-container">
+            <RedliningChat
+              documentId={sessionData.uploaded_document_id}
+              sessionId={sessionData.session_id}
+            />
+          </div>
         </div>
       </div>
     );
@@ -483,8 +440,6 @@ const RedliningMode = ({ onExit }) => {
 
       <div className="redlining-content">
         {currentStep === 'upload' && renderUploadStep()}
-        {currentStep === 'processing' && renderProcessingStep()}
-        {currentStep === 'results' && renderResultsStep()}
         {currentStep === 'review' && renderReviewStep()}
       </div>
     </div>

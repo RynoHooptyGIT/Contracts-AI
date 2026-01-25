@@ -66,6 +66,8 @@ class DocumentRenderer:
             html, css = self._convert_docx_to_html(filepath)
         elif filename.endswith('.pdf'):
             html, css = self._convert_pdf_to_html(filepath)
+        elif filename.endswith('.txt'):
+            html, css = self._convert_txt_to_html(filepath, document_id)
         else:
             raise ValueError(f"Unsupported file type: {filename}")
 
@@ -120,6 +122,47 @@ class DocumentRenderer:
                                 html_parts.append(f'<h3>{para.strip()}</h3>')
                             else:
                                 html_parts.append(f'<p>{para.strip()}</p>')
+
+        html = f"<div class='document'>{''.join(html_parts)}</div>"
+        css = self._generate_default_css()
+
+        return html, css
+
+    def _convert_txt_to_html(self, filepath: str, document_id: str = None) -> tuple[str, str]:
+        """Convert plain text to HTML
+
+        Falls back to reading from chunks table if file doesn't exist
+        """
+        html_parts = []
+        text = None
+
+        # Try to read from file first
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                text = f.read()
+        except FileNotFoundError:
+            # Fall back to reconstructing from chunks
+            if document_id:
+                chunks = self.db.execute(
+                    "SELECT text FROM chunks WHERE document_id = ? ORDER BY chunk_index",
+                    (document_id,)
+                ).fetchall()
+
+                if chunks:
+                    text = '\n\n'.join([chunk[0] for chunk in chunks])
+
+        if not text:
+            raise ValueError(f"Could not read document from {filepath} or database chunks")
+
+        # Structure text as HTML paragraphs
+        paragraphs = text.split('\n\n')
+        for para in paragraphs:
+            if para.strip():
+                # Detect headings (all caps or short lines)
+                if self._is_heading(para):
+                    html_parts.append(f'<h3>{para.strip()}</h3>')
+                else:
+                    html_parts.append(f'<p>{para.strip()}</p>')
 
         html = f"<div class='document'>{''.join(html_parts)}</div>"
         css = self._generate_default_css()

@@ -7,13 +7,11 @@ import RecentActivityTimeline from './RecentActivityTimeline'
 import CommonEntitiesList from './CommonEntitiesList'
 import SuggestedQuestions from './SuggestedQuestions'
 import ComplianceUpload from './ComplianceUpload'
-import LogPanel from './LogPanel'
 
 function DocumentInsightsPanel({ refreshTrigger, onQuestionClick, onCategoryClick }) {
   const [insights, setInsights] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [showLogs, setShowLogs] = useState(false)
 
   useEffect(() => {
     fetchInsights()
@@ -103,20 +101,6 @@ function DocumentInsightsPanel({ refreshTrigger, onQuestionClick, onCategoryClic
 
             <ComplianceUpload onUploadComplete={fetchInsights} />
           </>
-        )}
-      </div>
-
-      <div className="logs-section">
-        <button
-          className="toggle-logs-button"
-          onClick={() => setShowLogs(!showLogs)}
-        >
-          {showLogs ? '▼ Hide System Logs' : '▶ View System Logs'}
-        </button>
-        {showLogs && (
-          <div className="logs-container">
-            <LogPanel />
-          </div>
         )}
       </div>
     </div>
