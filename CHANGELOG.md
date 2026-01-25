@@ -19,6 +19,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.1] - 2026-01-25
+
+### Added - Phase 2: Inline Accept/Reject UI
+
+**New Components:**
+- **`frontend/src/components/InlineActionButtons.jsx`** - Floating action buttons for inline change review
+  - Green ✓ (Accept) and red ✗ (Reject) buttons appear on hover over highlighted text
+  - Fixed positioning above cursor location with smooth fadeInUp animation (150ms)
+  - Async handlers prevent double-clicks during API processing
+  - Loading spinner animation during action processing
+  - Responsive design: hides labels on mobile (<768px), shows icons only
+  - Props: changeId, position, onAccept, onReject, isVisible
+
+- **`frontend/src/components/InlineActionButtons.css`** - Styling for inline action buttons
+  - Floating tooltip-style with shadow (0 4px 12px rgba(0,0,0,0.15))
+  - z-index: 10000 for visibility over document content
+  - Green accept button (#10b981) and red reject button (#ef4444)
+  - Transform translate(-50%, -100%) for centered positioning
+  - Smooth hover effects with translateY and box-shadow transitions
+
+**Enhanced Components:**
+- **`frontend/src/components/AnnotationOverlay.jsx`** - Integrated inline buttons with hover logic
+  - Added state management: hoveredChangeId, hoverPosition
+  - Modified wrapTextInNode() to attach mouseenter/mouseleave listeners to `<mark>` elements
+  - Visual state classes: state-pending, state-accepted, state-rejected
+  - Smart mouseleave logic prevents buttons disappearing when moving mouse to click them
+  - Only pending changes display inline buttons (accepted/rejected are final states)
+  - Position calculated from mark.getBoundingClientRect() for accurate placement
+
+- **`frontend/src/components/AnnotationOverlay.css`** - Visual state animations (Lines 271-396)
+  - **Pending state**: Yellow highlight (#fef3c7) with dotted border, hover effect with shadow
+  - **Accepted state**: Green background (#d1fae5) with solid border, ✓ badge with checkmarkPop animation
+    - acceptFlash animation (400ms) transitions from bright to normal green
+    - Badge appears at right: 4px with pop animation using cubic-bezier easing
+  - **Rejected state**: Red background (#fee2e2) with solid border, ✗ badge, strikethrough text
+    - rejectFlash animation (400ms) with fade effect
+    - xmarkPop animation includes 180-degree rotation
+    - Reduced opacity (0.7) for de-emphasized appearance
+  - State classes override risk-based colors for consistent visual feedback
+
+**Documentation:**
+- Updated **`MVP-IMPLEMENTATION-TRACKER.md`** to mark Phase 2 as 100% complete
+  - All 4 sub-tasks completed with implementation notes
+  - Overall MVP progress: 85% (Phase 1 + 2 complete)
+
+### Changed
+
+**User Experience:**
+- Review workflow now follows user-requested pattern: "green check mark or red x next to the section being modified. keep them together not as another modal or div"
+- Inline buttons replace need to reference separate sidebar for every action
+- Visual feedback is immediate and intuitive with color-coded states and animations
+- Hover-to-reveal pattern reduces UI clutter while maintaining discoverability
+
+**Technical Implementation:**
+- Used fixed positioning instead of absolute for better scroll handling
+- Event listeners on DOM elements avoid React virtual DOM conflicts
+- relatedTarget check in mouseleave prevents button flicker
+- State classes applied to existing mark elements rather than re-rendering components
+
+### UX Flow
+
+1. User hovers mouse over yellow-highlighted text (pending change)
+2. Inline buttons appear above cursor with fadeInUp animation (<100ms)
+3. User clicks ✓ Accept or ✗ Reject
+4. Button disabled with loading spinner during API call
+5. Highlight flashes (acceptFlash or rejectFlash) and transitions to final color
+6. Badge (✓ or ✗) appears with pop animation
+7. Inline buttons disappear (change is now final)
+8. Sidebar card updates to reflect accepted/rejected status
+
+### Progress
+
+- **Phase 1**: 80% complete (multi-template infrastructure ready, consensus analysis deferred)
+- **Phase 2**: 100% complete (inline UI fully implemented)
+- **Overall MVP**: 85% complete
+- **Next**: Phase 3 (Export Gating with Summary)
+
+---
+
 ## [0.4.0] - 2026-01-19
 
 ### Added - Phase 1: Golden Templates System
