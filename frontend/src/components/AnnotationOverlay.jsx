@@ -1,16 +1,22 @@
 import { useState, useEffect } from 'react';
 import AnnotationCard from './AnnotationCard';
+import InlineActionButtons from './InlineActionButtons';
 import './AnnotationOverlay.css';
 
 /**
  * AnnotationOverlay - Manages and displays visual annotations on the document
  * Supports both progressive mode (via props) and batch mode (via API fetch)
+ * Now includes inline accept/reject buttons on hover
  */
 const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, progressiveChanges }) => {
   const [changes, setChanges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedChangeId, setSelectedChangeId] = useState(null);
+
+  // Inline action buttons state
+  const [hoveredChangeId, setHoveredChangeId] = useState(null);
+  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
 
   // Progressive mode: Use changes from props
   useEffect(() => {
@@ -253,6 +259,19 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
     mark.dataset.changeId = changeId;
     mark.textContent = highlightText;
 
+    // Get user_action state for this change
+    const change = changes.find(c => c.id === changeId);
+    const userAction = change?.user_action || 'pending';
+
+    // Add visual state class based on user action
+    if (userAction === 'accepted') {
+      mark.classList.add('state-accepted');
+    } else if (userAction === 'rejected') {
+      mark.classList.add('state-rejected');
+    } else {
+      mark.classList.add('state-pending');
+    }
+
     console.log(`✨ Created mark element with class="${mark.className}", text="${highlightText.substring(0, 30)}..."`);
 
     // Add click handler
@@ -260,6 +279,26 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
       setSelectedChangeId(changeId);
       scrollToChange(changeId);
     });
+
+    // Add hover handlers for inline action buttons (only for pending changes)
+    if (userAction === 'pending') {
+      mark.addEventListener('mouseenter', (e) => {
+        const rect = mark.getBoundingClientRect();
+        setHoveredChangeId(changeId);
+        setHoverPosition({
+          x: rect.left + rect.width / 2,
+          y: rect.top
+        });
+      });
+
+      mark.addEventListener('mouseleave', (e) => {
+        // Only hide if we're not moving to the buttons
+        const relatedTarget = e.relatedTarget;
+        if (!relatedTarget || !relatedTarget.closest('.inline-action-buttons')) {
+          setHoveredChangeId(null);
+        }
+      });
+    }
 
     // Replace text node with fragments
     const fragment = document.createDocumentFragment();
@@ -475,6 +514,15 @@ const AnnotationOverlay = ({ sessionId, documentContainerRef, onChangeAction, pr
           </div>
         )}
       </div>
+
+      {/* Inline Action Buttons - Appear on hover over highlights */}
+      <InlineActionButtons
+        changeId={hoveredChangeId}
+        position={hoverPosition}
+        isVisible={!!hoveredChangeId}
+        onAccept={(changeId) => handleChangeAction(changeId, 'accepted')}
+        onReject={(changeId) => handleChangeAction(changeId, 'rejected')}
+      />
     </div>
   );
 };

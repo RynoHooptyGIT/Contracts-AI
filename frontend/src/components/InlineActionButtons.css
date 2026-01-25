@@ -1,0 +1,144 @@
+/* Inline Action Buttons - Floating tooltip-style buttons */
+
+.inline-action-buttons {
+  display: flex;
+  gap: 6px;
+  background: white;
+  padding: 4px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  animation: fadeInUp 150ms ease-out;
+  pointer-events: auto;
+
+  /* Position slightly above and to the right of cursor */
+  transform: translate(-50%, -100%);
+  margin-top: -8px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 8px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%);
+  }
+}
+
+.inline-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 120ms ease-out;
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.inline-action-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.inline-action-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.inline-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Accept button - Green */
+.accept-btn {
+  background: #10b981;
+  color: white;
+}
+
+.accept-btn:hover:not(:disabled) {
+  background: #059669;
+}
+
+.accept-btn:active:not(:disabled) {
+  background: #047857;
+}
+
+/* Reject button - Red */
+.reject-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.reject-btn:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.reject-btn:active:not(:disabled) {
+  background: #b91c1c;
+}
+
+/* Button icon */
+.btn-icon {
+  font-size: 16px;
+  line-height: 1;
+  font-weight: bold;
+}
+
+/* Button label */
+.btn-label {
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* Responsive: Hide labels on small screens, show only icons */
+@media (max-width: 768px) {
+  .btn-label {
+    display: none;
+  }
+
+  .inline-action-btn {
+    padding: 8px;
+    min-width: 36px;
+    justify-content: center;
+  }
+
+  .btn-icon {
+    font-size: 18px;
+  }
+}
+
+/* Focus styles for accessibility */
+.inline-action-btn:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.inline-action-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Loading state */
+.inline-action-btn:disabled::after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 600ms linear infinite;
+  display: inline-block;
+  margin-left: 4px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
